@@ -126,9 +126,10 @@ class _MyHomePageState extends State<MyHomePage> {
       child: Scaffold(
         resizeToAvoidBottomInset: false,
         backgroundColor: Colors.black,
-        body: Center(child: OrientationBuilder(builder: (context, orientation) {
+        body: OrientationBuilder(builder: (context, orientation) {
           if (orientation == Orientation.landscape) {
             return Stack(
+              alignment: Alignment.topCenter,
               children: [
                 CarouselWidget(
                   src: src,
@@ -150,7 +151,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
                 IntrinsicHeight(
                   child: ExpansionTile(
-                    title: Align(
+                    title: const Align(
                       alignment: Alignment.topLeft,
                       child: Icon(
                         Icons.auto_awesome,
@@ -216,7 +217,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     child: Align(
                   alignment: Alignment.bottomCenter,
                   child: Text(
-                    '${getPage()} / ${src.length}',
+                    '${getPage()} / ${src.length} / $totalrenders',
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 )),
@@ -268,7 +269,7 @@ class _MyHomePageState extends State<MyHomePage> {
               ],
             );
           }
-        })),
+        }),
       ),
     );
   }
@@ -762,39 +763,31 @@ class PromptsWidget extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
         Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          child: Card(
+            color: Colors.black,
             child: TextField(
               controller: controller,
               maxLines: orientation == Orientation.landscape ? 1 : 4,
+              showCursor: true,
+              cursorColor: Colors.yellow,
+              cursorHeight: 10,
               style: Theme.of(context)
                   .textTheme
                   .bodyMedium!
-                  .copyWith(fontSize: 12),
-              decoration: const InputDecoration(
-                  contentPadding: EdgeInsets.only(bottom: 8)),
+                  .copyWith(fontSize: 10),
             ),
           ),
         ),
-        const Divider(
-          color: Colors.white,
-        ),
         Expanded(
-            child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: Card(
+          color: Colors.black,
           child: TextField(
             controller: controller2,
             maxLines: orientation == Orientation.landscape ? 1 : 4,
             style:
-                Theme.of(context).textTheme.bodyMedium!.copyWith(fontSize: 12),
-            decoration: const InputDecoration(
-                contentPadding: EdgeInsets.only(bottom: 8)),
+                Theme.of(context).textTheme.bodyMedium!.copyWith(fontSize: 10),
           ),
         )),
-        const Divider(
-          color: Colors.white,
-        ),
-        const Spacer(),
       ],
     );
   }
