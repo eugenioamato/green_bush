@@ -48,8 +48,8 @@ class _MyHomePageState extends State<MyHomePage> {
   TextEditingController controller2 = TextEditingController()
     ..text = "cartoon, blur";
   CarouselController carouselController = CarouselController();
-  int activeThreads=0;
-  int getActiveThreads()=>activeThreads;
+  int activeThreads = 0;
+  int getActiveThreads() => activeThreads;
 
   bool _auto = false;
   void getAuto() => _auto;
@@ -98,7 +98,8 @@ class _MyHomePageState extends State<MyHomePage> {
       resizeToAvoidBottomInset: false,
       backgroundColor: Colors.black,
       body: SafeArea(
-        child: Center(child: OrientationBuilder(builder: (context, orientation) {
+        child:
+            Center(child: OrientationBuilder(builder: (context, orientation) {
           if (orientation == Orientation.landscape) {
             return Flex(
               direction: Axis.vertical,
@@ -326,7 +327,7 @@ class _MyHomePageState extends State<MyHomePage> {
     "Euler a",
     "Heun",
   ];
-  final pool = Pool(170, timeout: const Duration(seconds: 120));
+  final pool = Pool(40, timeout: const Duration(seconds: 120));
 
   void _multiSpan() {
     carouselController.jumpToPage(0);
@@ -400,7 +401,9 @@ class SettingsWidget extends StatefulWidget {
     required this.getAuto,
     required this.controller,
     required this.controller2,
-    required this.showActions, required this.orientation, required this.getActiveThreads,
+    required this.showActions,
+    required this.orientation,
+    required this.getActiveThreads,
   }) : super(key: key);
 
   @override
@@ -524,7 +527,9 @@ class ActionsWidget extends StatefulWidget {
       required this.refreshCallback,
       required this.multispanCallback,
       required this.setAuto,
-      required this.getAuto, required this.orientation, required this.getActiveThreads})
+      required this.getAuto,
+      required this.orientation,
+      required this.getActiveThreads})
       : super(key: key);
 
   @override
@@ -538,22 +543,25 @@ class _ActionsWidgetState extends State<ActionsWidget> {
       direction: Axis.vertical,
       children: [
         Expanded(
-          flex: 3,
+            flex: 3,
             child: PromptsWidget(
-          controller: widget.controller,
-          controller2: widget.controller2,
+              controller: widget.controller,
+              controller2: widget.controller2,
               orientation: widget.orientation,
-        )),
+            )),
         Flexible(
           flex: 1,
-          child: Flex(
-              direction: Axis.horizontal, children: [
+          child: Flex(direction: Axis.horizontal, children: [
             Expanded(
               child: IconButton(
                   onPressed: () => widget.multispanCallback(),
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.play_circle,
-                    color: Colors.green,
+                    color: (widget.getActiveThreads() == 0
+                        ? Colors.green
+                        : widget.getActiveThreads() > 100
+                            ? Colors.red
+                            : Colors.orange),
                   )),
             ),
             if (widget.getAuto())
@@ -681,26 +689,33 @@ class PromptsWidget extends StatelessWidget {
             child: TextField(
               controller: controller,
               maxLines: orientation == Orientation.landscape ? 1 : 4,
-              style: Theme.of(context).textTheme.bodyMedium!.copyWith(fontSize: 12),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium!
+                  .copyWith(fontSize: 12),
               decoration: const InputDecoration(
                   contentPadding: EdgeInsets.only(bottom: 8)),
             ),
           ),
         ),
-        const Divider(color: Colors.white,),
+        const Divider(
+          color: Colors.white,
+        ),
         Expanded(
             child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8.0),
           child: TextField(
             controller: controller2,
             maxLines: orientation == Orientation.landscape ? 1 : 4,
-            style: Theme.of(context).textTheme.bodyMedium!.copyWith(fontSize: 12),
+            style:
+                Theme.of(context).textTheme.bodyMedium!.copyWith(fontSize: 12),
             decoration: const InputDecoration(
                 contentPadding: EdgeInsets.only(bottom: 8)),
           ),
-
         )),
-        const Divider(color: Colors.white,),
+        const Divider(
+          color: Colors.white,
+        ),
         const Spacer(),
       ],
     );
