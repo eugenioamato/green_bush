@@ -52,7 +52,7 @@ class _MyHomePageState extends State<MyHomePage> {
   int getActiveThreads() => activeThreads;
 
   bool _auto = false;
-  void getAuto() => _auto;
+  bool getAuto() => _auto;
   void setAuto(v) => setState(() {
         _auto = v;
       });
@@ -143,6 +143,22 @@ class _MyHomePageState extends State<MyHomePage> {
                     focusNode: focusNode,
                     carouselController: carouselController,
                   ),
+                ),
+                Align(
+                  alignment: Alignment(0.95, 0.95),
+                  child: IconButton(
+                      iconSize: 32,
+                      onPressed: () {
+                        setState(() {
+                          setAuto(!getAuto());
+                        });
+                      },
+                      icon: Icon(
+                        (getAuto()
+                            ? Icons.play_circle
+                            : Icons.play_circle_outline),
+                        color: (Colors.green),
+                      )),
                 ),
                 Align(
                   alignment: Alignment(-0.95, -0.95),
@@ -325,8 +341,8 @@ class _MyHomePageState extends State<MyHomePage> {
           }
           if (index == -1) return;
           src.removeAt(index);
-          _startGeneration(
-              prompt, nprompt, method, sampler, cfg, steps, seed, apiKey);
+          totalrenders--;
+          activeThreads--;
           setState(() {});
           return;
         }
@@ -347,6 +363,7 @@ class _MyHomePageState extends State<MyHomePage> {
       if (kDebugMode) {
         print('Orphaned job $job');
       }
+      activeThreads--;
       return;
     }
     src[index] = updatedShot;
@@ -420,6 +437,7 @@ class _MyHomePageState extends State<MyHomePage> {
             totalrenders++;
             pool.withResource(() => _startGeneration(
                 prompt, nprompt, method, sampler, cfg, steps, seed, apiKey));
+            Future.delayed(Duration(milliseconds: 50));
           }
         }
       }
