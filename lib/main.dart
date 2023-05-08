@@ -94,117 +94,119 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       backgroundColor: Colors.black,
-      body: Center(child: OrientationBuilder(builder: (context, orientation) {
-        if (orientation == Orientation.landscape) {
-          return Flex(
-            direction: Axis.vertical,
-            children: [
-              Flexible(
-                flex: 2,
-                child: SettingsWidget(
-                  showActions: true,
-                  orientation: orientation,
-                  refreshCallback: () {
-                    setState(() {});
-                  },
-                  controller: controller,
-                  controller2: controller2,
-                  cfgSliderEValue: cfgSliderEValue,
-                  setCfgSliderEValue: setCfgSliderEValue,
-                  cfgSliderValue: cfgSliderValue,
-                  setCfgSliderValue: setCfgSliderValue,
-                  stepSliderEValue: stepSliderEValue,
-                  setStepSliderValue: setStepSliderValue,
-                  stepSliderValue: stepSliderValue,
-                  setStepSliderEValue: setStepSliderEValue,
-                  setAuto: setAuto,
-                  getAuto: getAuto,
-                  multispanCallback: _multiSpan,
-                ),
-              ),
-              Expanded(
-                flex: 8,
-                child: CarouselWidget(
-                  src: src,
-                  getAuto: getAuto,
-                  focusNode: focusNode,
-                  carouselController: carouselController,
-                  autoplayCallback: () {
-                    setState(() {
-                      if (_auto) {
-                        _auto = false;
-                      } else {
-                        _auto = true;
-                      }
-                    });
-                  },
-                ),
-              ),
-            ],
-          );
-        } else {
-          //portrait
-          return Flex(
-            direction: Axis.vertical,
-            children: [
-              Expanded(
-                flex: 2,
-                child: SettingsWidget(
-                  orientation: orientation,
-                  showActions: false,
-                  refreshCallback: () {
-                    setState(() {});
-                  },
-                  controller: controller,
-                  controller2: controller2,
-                  cfgSliderEValue: cfgSliderEValue,
-                  setCfgSliderEValue: setCfgSliderEValue,
-                  cfgSliderValue: cfgSliderValue,
-                  setCfgSliderValue: setCfgSliderValue,
-                  stepSliderEValue: stepSliderEValue,
-                  setStepSliderValue: setStepSliderValue,
-                  stepSliderValue: stepSliderValue,
-                  setStepSliderEValue: setStepSliderEValue,
-                  setAuto: setAuto,
-                  getAuto: getAuto,
-                  multispanCallback: _multiSpan,
-                ),
-              ),
-              Expanded(
-                flex: 8,
-                child: CarouselWidget(
-                  src: src,
-                  getAuto: getAuto,
-                  focusNode: focusNode,
-                  carouselController: carouselController,
-                  autoplayCallback: () {
-                    setState(() {
-                      if (_auto) {
-                        _auto = false;
-                      } else {
-                        _auto = true;
-                      }
-                    });
-                  },
-                ),
-              ),
-              Flexible(
+      body: SafeArea(
+        child: Center(child: OrientationBuilder(builder: (context, orientation) {
+          if (orientation == Orientation.landscape) {
+            return Flex(
+              direction: Axis.vertical,
+              children: [
+                Flexible(
                   flex: 4,
-                  child: ActionsWidget(
-                    controller2: controller2,
-                    controller: controller,
+                  child: SettingsWidget(
+                    showActions: true,
                     orientation: orientation,
-                    multispanCallback: _multiSpan,
                     refreshCallback: () {
                       setState(() {});
                     },
+                    controller: controller,
+                    controller2: controller2,
+                    cfgSliderEValue: cfgSliderEValue,
+                    setCfgSliderEValue: setCfgSliderEValue,
+                    cfgSliderValue: cfgSliderValue,
+                    setCfgSliderValue: setCfgSliderValue,
+                    stepSliderEValue: stepSliderEValue,
+                    setStepSliderValue: setStepSliderValue,
+                    stepSliderValue: stepSliderValue,
+                    setStepSliderEValue: setStepSliderEValue,
                     setAuto: setAuto,
                     getAuto: getAuto,
-                  )),
-            ],
-          );
-        }
-      })),
+                    multispanCallback: _multiSpan,
+                  ),
+                ),
+                Expanded(
+                  flex: 8,
+                  child: CarouselWidget(
+                    src: src,
+                    getAuto: getAuto,
+                    focusNode: focusNode,
+                    carouselController: carouselController,
+                    autoplayCallback: () {
+                      setState(() {
+                        if (_auto) {
+                          _auto = false;
+                        } else {
+                          _auto = true;
+                        }
+                      });
+                    },
+                  ),
+                ),
+              ],
+            );
+          } else {
+            //portrait
+            return Flex(
+              direction: Axis.vertical,
+              children: [
+                Flexible(
+                    flex: 6,
+                    child: ActionsWidget(
+                      controller2: controller2,
+                      controller: controller,
+                      orientation: orientation,
+                      multispanCallback: _multiSpan,
+                      refreshCallback: () {
+                        setState(() {});
+                      },
+                      setAuto: setAuto,
+                      getAuto: getAuto,
+                    )),
+                Expanded(
+                  flex: 8,
+                  child: CarouselWidget(
+                    src: src,
+                    getAuto: getAuto,
+                    focusNode: focusNode,
+                    carouselController: carouselController,
+                    autoplayCallback: () {
+                      setState(() {
+                        if (_auto) {
+                          _auto = false;
+                        } else {
+                          _auto = true;
+                        }
+                      });
+                    },
+                  ),
+                ),
+                Expanded(
+                  flex: 5,
+                  child: SettingsWidget(
+                    orientation: orientation,
+                    showActions: false,
+                    refreshCallback: () {
+                      setState(() {});
+                    },
+                    controller: controller,
+                    controller2: controller2,
+                    cfgSliderEValue: cfgSliderEValue,
+                    setCfgSliderEValue: setCfgSliderEValue,
+                    cfgSliderValue: cfgSliderValue,
+                    setCfgSliderValue: setCfgSliderValue,
+                    stepSliderEValue: stepSliderEValue,
+                    setStepSliderValue: setStepSliderValue,
+                    stepSliderValue: stepSliderValue,
+                    setStepSliderEValue: setStepSliderEValue,
+                    setAuto: setAuto,
+                    getAuto: getAuto,
+                    multispanCallback: _multiSpan,
+                  ),
+                ),
+              ],
+            );
+          }
+        })),
+      ),
     );
   }
 
@@ -523,46 +525,51 @@ class _ActionsWidgetState extends State<ActionsWidget> {
       direction: Axis.vertical,
       children: [
         Expanded(
+          flex: 3,
             child: PromptsWidget(
           controller: widget.controller,
           controller2: widget.controller2,
               orientation: widget.orientation,
         )),
-        Flex(direction: Axis.horizontal, children: [
-          Expanded(
-            child: IconButton(
-                onPressed: () => widget.multispanCallback(),
-                icon: const Icon(
-                  Icons.play_circle,
-                  color: Colors.green,
-                )),
-          ),
-          if (widget.getAuto())
+        Flexible(
+          flex: 1,
+          child: Flex(
+              direction: Axis.horizontal, children: [
             Expanded(
+              child: IconButton(
+                  onPressed: () => widget.multispanCallback(),
+                  icon: const Icon(
+                    Icons.play_circle,
+                    color: Colors.green,
+                  )),
+            ),
+            if (widget.getAuto())
+              Expanded(
+                  child: IconButton(
+                      onPressed: () {
+                        widget.setAuto(false);
+                        widget.refreshCallback();
+                      },
+                      icon: const Icon(
+                        Icons.brightness_auto_rounded,
+                        color: Colors.green,
+                      )))
+            else
+              Expanded(
                 child: IconButton(
                     onPressed: () {
-                      widget.setAuto(false);
+                      setState(() {
+                        widget.setAuto(true);
+                      });
                       widget.refreshCallback();
                     },
                     icon: const Icon(
-                      Icons.brightness_auto_rounded,
-                      color: Colors.green,
-                    )))
-          else
-            Expanded(
-              child: IconButton(
-                  onPressed: () {
-                    setState(() {
-                      widget.setAuto(true);
-                    });
-                    widget.refreshCallback();
-                  },
-                  icon: const Icon(
-                    Icons.brightness_auto_outlined,
-                    color: Colors.blue,
-                  )),
-            ),
-        ]),
+                      Icons.brightness_auto_outlined,
+                      color: Colors.blue,
+                    )),
+              ),
+          ]),
+        ),
       ],
     );
   }
@@ -654,7 +661,6 @@ class PromptsWidget extends StatelessWidget {
       direction: Axis.vertical,
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
-        const Spacer(),
         Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
