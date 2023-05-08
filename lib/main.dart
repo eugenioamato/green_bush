@@ -53,7 +53,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
   bool _auto = false;
   void getAuto() => _auto;
-  void setAuto(v) => _auto = v;
+  void setAuto(v) => setState(() {
+    _auto = v;
+  });
   late final String apiKey;
   @override
   void initState() {
@@ -139,15 +141,6 @@ class _MyHomePageState extends State<MyHomePage> {
                   setAuto: setAuto,
                   focusNode: focusNode,
                   carouselController: carouselController,
-                  autoplayCallback: () {
-                    setState(() {
-                      if (_auto) {
-                        _auto = false;
-                      } else {
-                        _auto = true;
-                      }
-                    });
-                  },
                 ),
                 IntrinsicHeight(
                   child: ExpansionTile(
@@ -231,15 +224,6 @@ class _MyHomePageState extends State<MyHomePage> {
                     setAuto: setAuto,
                     focusNode: focusNode,
                     carouselController: carouselController,
-                    autoplayCallback: () {
-                      setState(() {
-                        if (_auto) {
-                          _auto = false;
-                        } else {
-                          _auto = true;
-                        }
-                      });
-                    },
                   ),
                 ),
                 Expanded(
@@ -668,7 +652,6 @@ class CarouselWidget extends StatefulWidget {
   final List src;
   final FocusNode focusNode;
   final CarouselController carouselController;
-  final Function autoplayCallback;
   final Function setPage;
   final Function getPage;
   final Function getAuto;
@@ -679,7 +662,7 @@ class CarouselWidget extends StatefulWidget {
       required this.src,
       required this.focusNode,
       required this.carouselController,
-      required this.autoplayCallback,
+
       required this.getAuto,
       required this.setPage,
       required this.getPage,
@@ -700,7 +683,6 @@ class _CarouselWidgetState extends State<CarouselWidget> {
       autofocus: true,
       onKeyEvent: (event) {
         if (event.logicalKey.keyId == 32) {
-          widget.autoplayCallback();
         } else if (event.logicalKey.keyId == 115) {
           if (_pressed) {
             _pressed = false;
