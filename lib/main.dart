@@ -64,7 +64,27 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
   }
 
-  bool pressed = false;
+  int _page = 0;
+  void setPage(page) {
+    var range = 30;
+    var len = src.length;
+    if (len == 0) {
+      _page = 0;
+      return;
+    }
+    if (_page < page) {
+      precache(src[(page + range) % len].url);
+      CachedNetworkImage.evictFromCache(src[(page - range) % len].url);
+    } else {
+      precache(src[(page - range) % len].url);
+      CachedNetworkImage.evictFromCache(src[(page + range) % len].url);
+    }
+    setState(() {
+      _page = page;
+    });
+  }
+
+  int getPage() => _page;
 
   double cfgSliderValue = 7;
   void setCfgSliderValue(v) => cfgSliderValue = v;
@@ -94,12 +114,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      backgroundColor: Colors.black,
-      body: SafeArea(
-        child:
-            Center(child: OrientationBuilder(builder: (context, orientation) {
+    return SafeArea(
+      child: Scaffold(
+        resizeToAvoidBottomInset: false,
+        backgroundColor: Colors.black,
+        body: Center(child: OrientationBuilder(builder: (context, orientation) {
           if (orientation == Orientation.landscape) {
             return Flex(
               direction: Axis.vertical,
@@ -132,6 +151,8 @@ class _MyHomePageState extends State<MyHomePage> {
                   flex: 8,
                   child: CarouselWidget(
                     src: src,
+                    setPage: setPage,
+                    getPage: getPage,
                     getAuto: getAuto,
                     focusNode: focusNode,
                     carouselController: carouselController,
@@ -146,6 +167,14 @@ class _MyHomePageState extends State<MyHomePage> {
                     },
                   ),
                 ),
+                Flexible(
+                    child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Text(
+                    '${getPage()} / ${src.length}',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                )),
               ],
             );
           } else {
@@ -167,11 +196,21 @@ class _MyHomePageState extends State<MyHomePage> {
                       setAuto: setAuto,
                       getAuto: getAuto,
                     )),
+                Flexible(
+                    child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Text(
+                    '${getPage()} / ${src.length}',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                )),
                 Expanded(
                   flex: 8,
                   child: CarouselWidget(
                     src: src,
                     getAuto: getAuto,
+                    setPage: setPage,
+                    getPage: getPage,
                     focusNode: focusNode,
                     carouselController: carouselController,
                     autoplayCallback: () {
@@ -222,6 +261,9 @@ class _MyHomePageState extends State<MyHomePage> {
     if (kDebugMode) {
       print('starting from ${controller.text}');
     }
+    setState(() {
+      activeThreads++;
+    });
 
     final data = <String, dynamic>{
       "model": method,
@@ -250,11 +292,10 @@ class _MyHomePageState extends State<MyHomePage> {
     final earlyShot =
         Shot(job, '', prompt, nprompt, cfg, steps, seed, method, sampler);
     src.add(earlyShot);
-    src.sort();
     setState(() {});
 
     String url = '';
-    Future.delayed(const Duration(seconds: 4));
+    Future.delayed(const Duration(seconds: 5));
 
     int r = 0;
     do {
@@ -267,7 +308,7 @@ class _MyHomePageState extends State<MyHomePage> {
       try {
         url = resp2['imageUrl'];
       } catch (e) {
-        await Future.delayed(const Duration(seconds: 2));
+        await Future.delayed(const Duration(seconds: 5));
         if (r > 30) {
           var index = -1;
           for (int i = 0; i < src.length; i++) {
@@ -285,17 +326,21 @@ class _MyHomePageState extends State<MyHomePage> {
         r++;
       }
     } while (url.isEmpty);
-    var myImage = Image(
+    /*
+    Image(
       image: CachedNetworkImageProvider(url),
-    );
-    myImage.image
+    ).image
         .resolve(const ImageConfiguration())
         .addListener(ImageStreamListener((_, __) {
       if (mounted) {
         activeThreads--;
         setState(() {});
+        final bytes= PaintingBinding.instance.imageCache.currentSizeBytes;
+        final maxbytes= PaintingBinding.instance.imageCache.maximumSizeBytes;
+        print(':: $bytes / $maxbytes');
       }
-    }));
+    }));*/
+
     final updatedShot =
         Shot(job, url, prompt, nprompt, cfg, steps, seed, method, sampler);
     var index = -1;
@@ -312,8 +357,32 @@ class _MyHomePageState extends State<MyHomePage> {
       return;
     }
     src[index] = updatedShot;
+    final page = getPage();
+    if (index - page < 30 && index - page > -5) {
+      if (url.isNotEmpty) precache(url);
+    }
+
+    activeThreads--;
 
     setState(() {});
+  }
+
+  void precache(url) {
+    Image(
+      image: CachedNetworkImageProvider(url),
+    )
+        .image
+        .resolve(const ImageConfiguration())
+        .addListener(ImageStreamListener((_, __) {
+      if (mounted) {
+        setState(() {});
+        final bytes = PaintingBinding.instance.imageCache.currentSizeBytes;
+        final maxbytes = PaintingBinding.instance.imageCache.maximumSizeBytes;
+        if (kDebugMode) {
+          print(':: $bytes / $maxbytes');
+        }
+      }
+    }));
   }
 
   final methods = [
@@ -327,7 +396,7 @@ class _MyHomePageState extends State<MyHomePage> {
     "Euler a",
     "Heun",
   ];
-  final pool = Pool(40, timeout: const Duration(seconds: 120));
+  final pool = Pool(80, timeout: const Duration(seconds: 21));
 
   void _multiSpan() {
     carouselController.jumpToPage(0);
@@ -354,9 +423,6 @@ class _MyHomePageState extends State<MyHomePage> {
           for (int steps = stepSliderValue.toInt();
               steps < stepSliderEValue + 1;
               steps += 1) {
-            setState(() {
-              activeThreads++;
-            });
             pool.withResource(() => _startGeneration(
                 prompt, nprompt, method, sampler, cfg, steps, seed, apiKey));
           }
@@ -559,7 +625,7 @@ class _ActionsWidgetState extends State<ActionsWidget> {
                     Icons.play_circle,
                     color: (widget.getActiveThreads() == 0
                         ? Colors.green
-                        : widget.getActiveThreads() > 100
+                        : widget.getActiveThreads() > 50
                             ? Colors.red
                             : Colors.orange),
                   )),
@@ -602,6 +668,8 @@ class CarouselWidget extends StatefulWidget {
   final FocusNode focusNode;
   final CarouselController carouselController;
   final Function autoplayCallback;
+  final Function setPage;
+  final Function getPage;
   final Function getAuto;
   const CarouselWidget(
       {Key? key,
@@ -609,7 +677,9 @@ class CarouselWidget extends StatefulWidget {
       required this.focusNode,
       required this.carouselController,
       required this.autoplayCallback,
-      required this.getAuto})
+      required this.getAuto,
+      required this.setPage,
+      required this.getPage})
       : super(key: key);
 
   @override
@@ -654,11 +724,14 @@ class _CarouselWidgetState extends State<CarouselWidget> {
             .toList(),
         carouselController: widget.carouselController,
         options: CarouselOptions(
+          onPageChanged: (index, reason) {
+            widget.setPage(index);
+          },
           autoPlay: widget.getAuto(),
           autoPlayAnimationDuration: const Duration(milliseconds: 1),
           scrollDirection: Axis.vertical,
           enableInfiniteScroll: false,
-          autoPlayInterval: const Duration(seconds: 1),
+          autoPlayInterval: const Duration(milliseconds: 300),
           viewportFraction: 0.99,
         ),
       ),
