@@ -64,6 +64,8 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
   }
 
+  int totalrenders = 0;
+
   int _page = 0;
   void setPage(page) {
     var range = 30;
@@ -74,9 +76,13 @@ class _MyHomePageState extends State<MyHomePage> {
     }
     if (_page < page) {
       precache(src[(page + range) % len].url);
-      CachedNetworkImage.evictFromCache(src[(page - range) % len].url);
+      if (page - range >= 0) {
+        CachedNetworkImage.evictFromCache(src[(page - range)].url);
+      }
     } else {
-      precache(src[(page - range) % len].url);
+      if (page - range >= 0) {
+        precache(src[(page - range) % len].url);
+      }
       CachedNetworkImage.evictFromCache(src[(page + range) % len].url);
     }
     setState(() {
@@ -106,7 +112,9 @@ class _MyHomePageState extends State<MyHomePage> {
     controller.dispose();
     controller2.dispose();
     for (var s in src) {
-      CachedNetworkImage.evictFromCache(s.url);
+      if (s.url.isNotEmpty) {
+        CachedNetworkImage.evictFromCache(s.url);
+      }
       src.clear();
     }
     super.dispose();
@@ -120,61 +128,69 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Colors.black,
         body: Center(child: OrientationBuilder(builder: (context, orientation) {
           if (orientation == Orientation.landscape) {
-            return Flex(
-              direction: Axis.vertical,
+            return Stack(
               children: [
-                Flexible(
-                  flex: 4,
-                  child: SettingsWidget(
-                    showActions: true,
-                    orientation: orientation,
-                    getActiveThreads: getActiveThreads,
-                    refreshCallback: () {
-                      setState(() {});
-                    },
-                    controller: controller,
-                    controller2: controller2,
-                    cfgSliderEValue: cfgSliderEValue,
-                    setCfgSliderEValue: setCfgSliderEValue,
-                    cfgSliderValue: cfgSliderValue,
-                    setCfgSliderValue: setCfgSliderValue,
-                    stepSliderEValue: stepSliderEValue,
-                    setStepSliderValue: setStepSliderValue,
-                    stepSliderValue: stepSliderValue,
-                    setStepSliderEValue: setStepSliderEValue,
-                    setAuto: setAuto,
-                    getAuto: getAuto,
-                    multispanCallback: _multiSpan,
+                CarouselWidget(
+                  src: src,
+                  setPage: setPage,
+                  getPage: getPage,
+                  getAuto: getAuto,
+                  setAuto: setAuto,
+                  focusNode: focusNode,
+                  carouselController: carouselController,
+                  autoplayCallback: () {
+                    setState(() {
+                      if (_auto) {
+                        _auto = false;
+                      } else {
+                        _auto = true;
+                      }
+                    });
+                  },
+                ),
+                IntrinsicHeight(
+                  child: ExpansionTile(
+                    title: Align(
+                      alignment: Alignment.topLeft,
+                      child: Icon(
+                        Icons.auto_awesome,
+                        color: Colors.white,
+                      ),
+                    ),
+                    children: [
+                      IntrinsicHeight(
+                        child: SettingsWidget(
+                          showActions: true,
+                          orientation: orientation,
+                          getActiveThreads: getActiveThreads,
+                          refreshCallback: () {
+                            setState(() {});
+                          },
+                          controller: controller,
+                          controller2: controller2,
+                          cfgSliderEValue: cfgSliderEValue,
+                          setCfgSliderEValue: setCfgSliderEValue,
+                          cfgSliderValue: cfgSliderValue,
+                          setCfgSliderValue: setCfgSliderValue,
+                          stepSliderEValue: stepSliderEValue,
+                          setStepSliderValue: setStepSliderValue,
+                          stepSliderValue: stepSliderValue,
+                          setStepSliderEValue: setStepSliderEValue,
+                          setAuto: setAuto,
+                          getAuto: getAuto,
+                          multispanCallback: _multiSpan,
+                        ),
+                      )
+                    ],
                   ),
                 ),
-                Expanded(
-                  flex: 8,
-                  child: CarouselWidget(
-                    src: src,
-                    setPage: setPage,
-                    getPage: getPage,
-                    getAuto: getAuto,
-                    focusNode: focusNode,
-                    carouselController: carouselController,
-                    autoplayCallback: () {
-                      setState(() {
-                        if (_auto) {
-                          _auto = false;
-                        } else {
-                          _auto = true;
-                        }
-                      });
-                    },
-                  ),
-                ),
-                Flexible(
-                    child: Align(
+                Align(
                   alignment: Alignment.bottomCenter,
                   child: Text(
-                    '${getPage()} / ${src.length}',
+                    '${getPage()} / ${src.length} / $totalrenders',
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
-                )),
+                ),
               ],
             );
           } else {
@@ -211,6 +227,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     getAuto: getAuto,
                     setPage: setPage,
                     getPage: getPage,
+                    setAuto: setAuto,
                     focusNode: focusNode,
                     carouselController: carouselController,
                     autoplayCallback: () {
@@ -256,6 +273,8 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  Dio dio = Dio();
+
   void _startGeneration(
       prompt, nprompt, method, sampler, cfg, steps, seed, apiKey) async {
     if (kDebugMode) {
@@ -278,7 +297,6 @@ class _MyHomePageState extends State<MyHomePage> {
     };
     final str = jsonEncode(data);
 
-    Dio dio = Dio();
     final result = await dio.post("https://api.prodia.com/v1/job",
         data: str,
         options: Options(headers: {
@@ -391,6 +409,7 @@ class _MyHomePageState extends State<MyHomePage> {
     for (var s in src) {
       CachedNetworkImage.evictFromCache(s.url);
     }
+    totalrenders = 0;
     setState(() {
       src.clear();
     });
@@ -410,6 +429,7 @@ class _MyHomePageState extends State<MyHomePage> {
           for (int steps = stepSliderValue.toInt();
               steps < stepSliderEValue + 1;
               steps += 1) {
+            totalrenders++;
             pool.withResource(() => _startGeneration(
                 prompt, nprompt, method, sampler, cfg, steps, seed, apiKey));
           }
@@ -593,6 +613,7 @@ class _ActionsWidgetState extends State<ActionsWidget> {
   @override
   Widget build(BuildContext context) {
     return Flex(
+      mainAxisAlignment: MainAxisAlignment.end,
       direction: Axis.vertical,
       children: [
         Expanded(
@@ -604,46 +625,38 @@ class _ActionsWidgetState extends State<ActionsWidget> {
             )),
         Flexible(
           flex: 1,
-          child: Flex(direction: Axis.horizontal, children: [
-            Expanded(
-              child: IconButton(
-                  onPressed: () => widget.multispanCallback(),
-                  icon: Icon(
-                    Icons.play_circle,
-                    color: (widget.getActiveThreads() == 0
-                        ? Colors.green
-                        : widget.getActiveThreads() > 50
-                            ? Colors.red
-                            : Colors.orange),
-                  )),
-            ),
-            if (widget.getAuto())
-              Expanded(
+          child: Flex(
+              direction: Axis.horizontal,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Expanded(
                   child: IconButton(
-                      onPressed: () {
-                        widget.setAuto(false);
-                        widget.refreshCallback();
-                      },
-                      icon: const Icon(
-                        Icons.brightness_auto_rounded,
-                        color: Colors.green,
-                      )))
-            else
-              Expanded(
-                child: IconButton(
-                    onPressed: () {
-                      setState(() {
-                        widget.setAuto(true);
-                      });
-                      widget.refreshCallback();
-                    },
-                    icon: const Icon(
-                      Icons.brightness_auto_outlined,
-                      color: Colors.blue,
-                    )),
-              ),
-            Text(':${widget.getActiveThreads()}')
-          ]),
+                      onPressed: () => widget.multispanCallback(),
+                      icon: Icon(
+                        Icons.generating_tokens,
+                        color: (widget.getActiveThreads() == 0
+                            ? Colors.green
+                            : widget.getActiveThreads() > 50
+                                ? Colors.red
+                                : Colors.orange),
+                      )),
+                ),
+                Flexible(child: Text(':${widget.getActiveThreads()}')),
+                Expanded(
+                    child: IconButton(
+                        onPressed: () {
+                          setState(() {
+                            widget.setAuto(!widget.getAuto());
+                          });
+                          widget.refreshCallback();
+                        },
+                        icon: Icon(
+                          (widget.getAuto()
+                              ? Icons.play_circle
+                              : Icons.play_circle_outline),
+                          color: (Colors.green),
+                        )))
+              ]),
         ),
       ],
     );
@@ -658,6 +671,8 @@ class CarouselWidget extends StatefulWidget {
   final Function setPage;
   final Function getPage;
   final Function getAuto;
+
+  final Function setAuto;
   const CarouselWidget(
       {Key? key,
       required this.src,
@@ -666,7 +681,8 @@ class CarouselWidget extends StatefulWidget {
       required this.autoplayCallback,
       required this.getAuto,
       required this.setPage,
-      required this.getPage})
+      required this.getPage,
+      required this.setAuto})
       : super(key: key);
 
   @override
@@ -707,6 +723,7 @@ class _CarouselWidgetState extends State<CarouselWidget> {
             .map((e) => Thumb(
                   label: e.label,
                   url: e.url,
+                  setAuto: widget.setAuto,
                 ))
             .toList(),
         carouselController: widget.carouselController,
@@ -714,6 +731,7 @@ class _CarouselWidgetState extends State<CarouselWidget> {
           onPageChanged: (index, reason) {
             widget.setPage(index);
           },
+          pauseAutoPlayOnTouch: true,
           autoPlay: widget.getAuto(),
           autoPlayAnimationDuration: const Duration(milliseconds: 1),
           scrollDirection: Axis.vertical,
@@ -834,24 +852,27 @@ class Shot implements Comparable<Shot> {
 class Thumb extends StatelessWidget {
   final String label;
   final String url;
+  final Function setAuto;
 
   const Thumb({
     Key? key,
     required this.label,
     required this.url,
+    required this.setAuto,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-        onTap: () =>
-            launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
+        onTap: () {
+          setAuto(false);
+          launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+        },
         child: (url.isEmpty)
             ? GifView.asset('assets/images/loading.gif')
             : CachedNetworkImage(
                 imageUrl: url,
-                width: 1536,
-                height: 1024,
+                fit: BoxFit.contain,
                 progressIndicatorBuilder: (c, s, p) => LinearProgressIndicator(
                   value: p.progress,
                   color: Colors.black,
