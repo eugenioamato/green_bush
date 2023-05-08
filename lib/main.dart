@@ -731,7 +731,7 @@ class _CarouselWidgetState extends State<CarouselWidget> {
           autoPlayAnimationDuration: const Duration(milliseconds: 1),
           scrollDirection: Axis.vertical,
           enableInfiniteScroll: false,
-          autoPlayInterval: const Duration(milliseconds: 300),
+          autoPlayInterval: const Duration(milliseconds: 500),
           viewportFraction: 0.99,
         ),
       ),
