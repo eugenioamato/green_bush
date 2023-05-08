@@ -48,6 +48,9 @@ class _MyHomePageState extends State<MyHomePage> {
   TextEditingController controller2 = TextEditingController()
     ..text = "cartoon, blur";
   CarouselController carouselController = CarouselController();
+  int activeThreads=0;
+  int getActiveThreads()=>activeThreads;
+
   bool _auto = false;
   void getAuto() => _auto;
   void setAuto(v) => _auto = v;
@@ -105,6 +108,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   child: SettingsWidget(
                     showActions: true,
                     orientation: orientation,
+                    getActiveThreads: getActiveThreads,
                     refreshCallback: () {
                       setState(() {});
                     },
@@ -155,6 +159,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       controller: controller,
                       orientation: orientation,
                       multispanCallback: _multiSpan,
+                      getActiveThreads: getActiveThreads,
                       refreshCallback: () {
                         setState(() {});
                       },
@@ -187,6 +192,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     refreshCallback: () {
                       setState(() {});
                     },
+                    getActiveThreads: getActiveThreads,
                     controller: controller,
                     controller2: controller2,
                     cfgSliderEValue: cfgSliderEValue,
@@ -285,6 +291,7 @@ class _MyHomePageState extends State<MyHomePage> {
         .resolve(const ImageConfiguration())
         .addListener(ImageStreamListener((_, __) {
       if (mounted) {
+        activeThreads--;
         setState(() {});
       }
     }));
@@ -346,6 +353,9 @@ class _MyHomePageState extends State<MyHomePage> {
           for (int steps = stepSliderValue.toInt();
               steps < stepSliderEValue + 1;
               steps += 1) {
+            setState(() {
+              activeThreads++;
+            });
             pool.withResource(() => _startGeneration(
                 prompt, nprompt, method, sampler, cfg, steps, seed, apiKey));
           }
@@ -360,6 +370,7 @@ class SettingsWidget extends StatefulWidget {
   final Orientation orientation;
   final TextEditingController controller;
   final TextEditingController controller2;
+  final Function getActiveThreads;
   final Function refreshCallback;
   final Function multispanCallback;
   final double cfgSliderValue;
@@ -389,7 +400,7 @@ class SettingsWidget extends StatefulWidget {
     required this.getAuto,
     required this.controller,
     required this.controller2,
-    required this.showActions, required this.orientation,
+    required this.showActions, required this.orientation, required this.getActiveThreads,
   }) : super(key: key);
 
   @override
@@ -489,6 +500,7 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                   refreshCallback: widget.refreshCallback,
                   setAuto: widget.setAuto,
                   getAuto: widget.getAuto,
+                  getActiveThreads: widget.getActiveThreads,
                 )),
         ],
       ),
@@ -503,6 +515,7 @@ class ActionsWidget extends StatefulWidget {
   final Function multispanCallback;
   final Function setAuto;
   final Function getAuto;
+  final Function getActiveThreads;
   final Orientation orientation;
   const ActionsWidget(
       {Key? key,
@@ -511,7 +524,7 @@ class ActionsWidget extends StatefulWidget {
       required this.refreshCallback,
       required this.multispanCallback,
       required this.setAuto,
-      required this.getAuto, required this.orientation})
+      required this.getAuto, required this.orientation, required this.getActiveThreads})
       : super(key: key);
 
   @override
@@ -568,6 +581,7 @@ class _ActionsWidgetState extends State<ActionsWidget> {
                       color: Colors.blue,
                     )),
               ),
+            Text(':${widget.getActiveThreads()}')
           ]),
         ),
       ],
