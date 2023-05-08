@@ -327,20 +327,6 @@ class _MyHomePageState extends State<MyHomePage> {
         r++;
       }
     } while (url.isEmpty);
-    /*
-    Image(
-      image: CachedNetworkImageProvider(url),
-    ).image
-        .resolve(const ImageConfiguration())
-        .addListener(ImageStreamListener((_, __) {
-      if (mounted) {
-        activeThreads--;
-        setState(() {});
-        final bytes= PaintingBinding.instance.imageCache.currentSizeBytes;
-        final maxbytes= PaintingBinding.instance.imageCache.maximumSizeBytes;
-        print(':: $bytes / $maxbytes');
-      }
-    }));*/
 
     final updatedShot =
         Shot(job, url, prompt, nprompt, cfg, steps, seed, method, sampler);
