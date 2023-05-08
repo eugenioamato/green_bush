@@ -54,8 +54,8 @@ class _MyHomePageState extends State<MyHomePage> {
   bool _auto = false;
   void getAuto() => _auto;
   void setAuto(v) => setState(() {
-    _auto = v;
-  });
+        _auto = v;
+      });
   late final String apiKey;
   @override
   void initState() {
@@ -131,55 +131,58 @@ class _MyHomePageState extends State<MyHomePage> {
         body: OrientationBuilder(builder: (context, orientation) {
           if (orientation == Orientation.landscape) {
             return Stack(
-              alignment: Alignment.topCenter,
               children: [
-                CarouselWidget(
-                  src: src,
-                  setPage: setPage,
-                  getPage: getPage,
-                  getAuto: getAuto,
-                  setAuto: setAuto,
-                  focusNode: focusNode,
-                  carouselController: carouselController,
-                ),
-                IntrinsicHeight(
-                  child: ExpansionTile(
-                    title: const Align(
-                      alignment: Alignment.topLeft,
-                      child: Icon(
-                        Icons.auto_awesome,
-                        color: Colors.white,
-                      ),
-                    ),
-                    children: [
-                      IntrinsicHeight(
-                        child: SettingsWidget(
-                          showActions: true,
-                          orientation: orientation,
-                          getActiveThreads: getActiveThreads,
-                          refreshCallback: () {
-                            setState(() {});
-                          },
-                          controller: controller,
-                          controller2: controller2,
-                          cfgSliderEValue: cfgSliderEValue,
-                          setCfgSliderEValue: setCfgSliderEValue,
-                          cfgSliderValue: cfgSliderValue,
-                          setCfgSliderValue: setCfgSliderValue,
-                          stepSliderEValue: stepSliderEValue,
-                          setStepSliderValue: setStepSliderValue,
-                          stepSliderValue: stepSliderValue,
-                          setStepSliderEValue: setStepSliderEValue,
-                          setAuto: setAuto,
-                          getAuto: getAuto,
-                          multispanCallback: _multiSpan,
-                        ),
-                      )
-                    ],
+                Align(
+                  alignment: AlignmentDirectional.center,
+                  child: CarouselWidget(
+                    src: src,
+                    setPage: setPage,
+                    getPage: getPage,
+                    getAuto: getAuto,
+                    setAuto: setAuto,
+                    focusNode: focusNode,
+                    carouselController: carouselController,
                   ),
                 ),
                 Align(
-                  alignment: Alignment.bottomCenter,
+                  alignment: Alignment(-0.95, -0.95),
+                  child: IntrinsicWidth(
+                    child: ExpansionTile(
+                      title: Icon(
+                        Icons.auto_awesome,
+                        color: Colors.white,
+                        size: 32,
+                      ),
+                      children: [
+                        IntrinsicHeight(
+                          child: SettingsWidget(
+                            showActions: true,
+                            orientation: orientation,
+                            getActiveThreads: getActiveThreads,
+                            refreshCallback: () {
+                              setState(() {});
+                            },
+                            controller: controller,
+                            controller2: controller2,
+                            cfgSliderEValue: cfgSliderEValue,
+                            setCfgSliderEValue: setCfgSliderEValue,
+                            cfgSliderValue: cfgSliderValue,
+                            setCfgSliderValue: setCfgSliderValue,
+                            stepSliderEValue: stepSliderEValue,
+                            setStepSliderValue: setStepSliderValue,
+                            stepSliderValue: stepSliderValue,
+                            setStepSliderEValue: setStepSliderEValue,
+                            setAuto: setAuto,
+                            getAuto: getAuto,
+                            multispanCallback: _multiSpan,
+                          ),
+                        )
+                      ],
+                    ),
+                  ),
+                ),
+                Align(
+                  alignment: const Alignment(0, 0.95),
                   child: Text(
                     '${getPage()} / ${src.length} / $totalrenders',
                     style: Theme.of(context).textTheme.bodyMedium,
@@ -662,7 +665,6 @@ class CarouselWidget extends StatefulWidget {
       required this.src,
       required this.focusNode,
       required this.carouselController,
-
       required this.getAuto,
       required this.setPage,
       required this.getPage,
@@ -711,6 +713,7 @@ class _CarouselWidgetState extends State<CarouselWidget> {
             .toList(),
         carouselController: widget.carouselController,
         options: CarouselOptions(
+          initialPage: widget.getPage(),
           onPageChanged: (index, reason) {
             widget.setPage(index);
           },
@@ -720,7 +723,7 @@ class _CarouselWidgetState extends State<CarouselWidget> {
           scrollDirection: Axis.vertical,
           enableInfiniteScroll: false,
           autoPlayInterval: const Duration(milliseconds: 500),
-          viewportFraction: 0.99,
+          viewportFraction: 1.0,
         ),
       ),
     );
