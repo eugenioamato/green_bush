@@ -2,7 +2,7 @@
     package="com.eugenio.green_bush">
     <uses-permission android:name="android.permission.INTERNET"/>
    <application
-        android:label="green_bush"
+        android:label="Green Bush"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
 

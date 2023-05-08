@@ -274,7 +274,7 @@ class _MyHomePageState extends State<MyHomePage> {
       "sampler": sampler,
       "aspect_ratio": "landscape",
       "seed": seed,
-      "upscale": true,
+      "upscale": false,
     };
     final str = jsonEncode(data);
 
@@ -309,7 +309,7 @@ class _MyHomePageState extends State<MyHomePage> {
         url = resp2['imageUrl'];
       } catch (e) {
         await Future.delayed(const Duration(seconds: 5));
-        if (r > 30) {
+        if (r > 10) {
           var index = -1;
           for (int i = 0; i < src.length; i++) {
             if (src[i].id == job) {
@@ -318,8 +318,9 @@ class _MyHomePageState extends State<MyHomePage> {
             }
           }
           if (index == -1) return;
-          CachedNetworkImage.evictFromCache(url);
           src.removeAt(index);
+          _startGeneration(
+              prompt, nprompt, method, sampler, cfg, steps, seed, apiKey);
           setState(() {});
           return;
         }
@@ -396,7 +397,7 @@ class _MyHomePageState extends State<MyHomePage> {
     "Euler a",
     "Heun",
   ];
-  final pool = Pool(80, timeout: const Duration(seconds: 21));
+  final pool = Pool(170, timeout: const Duration(seconds: 21));
 
   void _multiSpan() {
     carouselController.jumpToPage(0);
