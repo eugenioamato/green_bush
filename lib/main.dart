@@ -68,9 +68,10 @@ class _MyHomePageState extends State<MyHomePage> {
       print('API_KEY IS $apiKey');
     }
     pool = Pool(maxThreads, timeout: const Duration(seconds: 21));
+    pool2 = Pool(maxThreads, timeout: const Duration(seconds: 21));
     if (Platform.isWindows || Platform.isMacOS) {
       range = 100;
-      maxThreads = 170;
+      maxThreads = 100;
     }
     super.initState();
   }
@@ -85,13 +86,13 @@ class _MyHomePageState extends State<MyHomePage> {
       return;
     }
     if (_page < page) {
-      precache(src[(page + range) % len]);
+      pool2.withResource(() => precache(src[(page + range) % len]));
       if (totalrenders > range) {
-        removeFromCache(src[(page - range)%len]);
+        removeFromCache(src[(page - range) % len]);
       }
     } else {
       if (page - range >= 0) {
-        precache(src[(page - range)]);
+        pool2.withResource(() => precache(src[(page - range)]));
       }
       if (totalrenders > range) {
         removeFromCache(src[(page + range)]);
@@ -143,7 +144,8 @@ class _MyHomePageState extends State<MyHomePage> {
         resizeToAvoidBottomInset: false,
         backgroundColor: Colors.black,
         body: OrientationBuilder(builder: (context, orientation) {
-          final total= (src.length) < 2 ? 1 : (src.length)-1;
+          final total = (src.length) < 2 ? 1 : (src.length) - 1;
+          final totalThreads=getActiveThreads();
           if (orientation == Orientation.landscape) {
             return Flex(
               direction: Axis.vertical,
@@ -170,11 +172,11 @@ class _MyHomePageState extends State<MyHomePage> {
                         child: IconButton(
                           iconSize: 32,
                           onPressed: () {},
-                          icon: Icon((getActiveThreads() > (maxThreads - 10))
+                          icon: Icon((totalThreads > (maxThreads*2 * 0.7))
                               ? Icons.hourglass_full
-                              : (getActiveThreads() > (maxThreads * 0.5))
+                              : (totalThreads > (maxThreads*2 * 0.5))
                                   ? Icons.hourglass_bottom
-                                  : (getActiveThreads() > (maxThreads * 0.1))
+                                  : (totalThreads > (maxThreads*2 * 0.1))
                                       ? Icons.hourglass_empty
                                       : Icons.check),
                           color: (Colors.green),
@@ -205,7 +207,7 @@ class _MyHomePageState extends State<MyHomePage> {
                               alignment: Alignment(-0.95, -0.95),
                               child: Icon(
                                 Icons.auto_awesome,
-                                color: Colors.white,
+                                color: Colors.green,
                                 size: 32,
                               ),
                             ),
@@ -243,7 +245,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       Align(
                         alignment: const Alignment(0, 0.75),
                         child: Text(
-                          '${getPage()+1} / ${src.length} / $totalrenders',
+                          '${getPage() + 1} / ${src.length} / $totalrenders',
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
                       ),
@@ -257,11 +259,9 @@ class _MyHomePageState extends State<MyHomePage> {
                     thumbColor: Colors.green,
                     inactiveColor: Colors.yellow.withOpacity(0.2),
                     activeColor: Colors.yellow.withOpacity(0.2),
-                    value: getPage().toDouble() /
-                        total,
+                    value: getPage().toDouble() / total,
                     onChanged: (double value) {
-                      carouselController
-                          .jumpToPage((value * total).toInt());
+                      carouselController.jumpToPage((value * total).toInt());
                     },
                   ),
                 ),
@@ -300,11 +300,9 @@ class _MyHomePageState extends State<MyHomePage> {
                     thumbColor: Colors.green,
                     inactiveColor: Colors.yellow.withOpacity(0.2),
                     activeColor: Colors.yellow.withOpacity(0.2),
-                    value: getPage().toDouble() /
-                        total,
+                    value: getPage().toDouble() / total,
                     onChanged: (double value) {
-                      carouselController
-                          .jumpToPage((value * total).toInt());
+                      carouselController.jumpToPage((value * total).toInt());
                     },
                   ),
                 ),
@@ -466,7 +464,7 @@ class _MyHomePageState extends State<MyHomePage> {
     src[index] = updatedShot;
     final page = getPage();
     if (index - page <= range && index - page > -5) {
-      if (url.isNotEmpty) precache(updatedShot);
+      if (url.isNotEmpty) pool2.withResource(() => precache(updatedShot));
     }
     activeThreads--;
     setState(() {});
@@ -482,26 +480,49 @@ class _MyHomePageState extends State<MyHomePage> {
   void precache(Shot s) {
     if (s.image != null) return;
     final url = s.url;
-    final image = Image(
-      image: Image.network(
-        url,
-      ).image,
-    );
-    image.image
-        .resolve(const ImageConfiguration())
-        .addListener(ImageStreamListener((_, __) {
-      updateSecondarySlider();
-      if (mounted) {
-        setState(() {});
-        final bytes = PaintingBinding.instance.imageCache.currentSizeBytes;
-        final maxbytes = PaintingBinding.instance.imageCache.maximumSizeBytes;
-        if (kDebugMode) {
-          print(':: $bytes / $maxbytes');
-        }
+    if (url.isEmpty) return;
+    activeThreads++;
+    late final Image image;
+    try {
+      image = Image(
+        image: Image.network(
+          url,
+        ).image,
+      );
+    } on Exception catch (e) {
+      if (kDebugMode) {
+        print('error creating image $e');
       }
-    }));
+      activeThreads--;
+      return;
+    }
 
-    s.image = image;
+    try {
+      image.image
+          .resolve(const ImageConfiguration())
+          .addListener(ImageStreamListener((_, __) {
+        updateSecondarySlider();
+        if (mounted) {
+          setState(() {});
+          final bytes = PaintingBinding.instance.imageCache.currentSizeBytes;
+          final maxbytes = PaintingBinding.instance.imageCache.maximumSizeBytes;
+          if (kDebugMode) {
+            print(':: $bytes / $maxbytes');
+          }
+        }
+      }));
+    } on Exception catch (e) {
+      if (kDebugMode) {
+        print('error resolving image $e');
+      }
+      activeThreads--;
+      return;
+    }
+    activeThreads--;
+    setState(() {
+      s.image = image;
+    });
+
   }
 
   final methods = [
@@ -516,6 +537,7 @@ class _MyHomePageState extends State<MyHomePage> {
     "Heun",
   ];
   late final Pool pool;
+  late final Pool pool2;
 
   void _multiSpan() {
     carouselController.jumpToPage(0);
