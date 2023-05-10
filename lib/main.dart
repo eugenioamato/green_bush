@@ -427,7 +427,6 @@ class _MyHomePageState extends State<MyHomePage> {
         url = resp2['imageUrl'];
       } else {
         await Future.delayed(const Duration(seconds: 5));
-        print('Still trying $job');
         if (r > 10) {
           var index = -1;
           for (int i = 0; i < src.length; i++) {
@@ -474,7 +473,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void removeFromCache(Shot s) {
     if (s.image != null) {
-      print('removing ${s.id}');
       s.image?.image.evict();
       s.image = null;
     }
@@ -482,7 +480,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void precache(Shot s) {
     if (s.image != null) return;
-    print('precaching ${s.id}');
     final url = s.url;
     final image = Image(
       image: Image.network(
