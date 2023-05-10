@@ -86,8 +86,8 @@ class _MyHomePageState extends State<MyHomePage> {
     }
     if (_page < page) {
       precache(src[(page + range) % len]);
-      if (totalrenders > range && (page - range >= 0)) {
-        removeFromCache(src[(page - range)]);
+      if (totalrenders > range) {
+        removeFromCache(src[(page - range)%len]);
       }
     } else {
       if (page - range >= 0) {
@@ -143,6 +143,7 @@ class _MyHomePageState extends State<MyHomePage> {
         resizeToAvoidBottomInset: false,
         backgroundColor: Colors.black,
         body: OrientationBuilder(builder: (context, orientation) {
+          final total= (src.length) < 2 ? 1 : (src.length)-1;
           if (orientation == Orientation.landscape) {
             return Flex(
               direction: Axis.vertical,
@@ -242,7 +243,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       Align(
                         alignment: const Alignment(0, 0.75),
                         child: Text(
-                          '${getPage()} / ${src.length} / $totalrenders',
+                          '${getPage()+1} / ${src.length} / $totalrenders',
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
                       ),
@@ -252,15 +253,15 @@ class _MyHomePageState extends State<MyHomePage> {
                 Flexible(
                   child: Slider(
                     secondaryTrackValue: getLoading(),
-                    divisions: totalrenders == 0 ? 1 : totalrenders,
+                    divisions: total,
                     thumbColor: Colors.green,
                     inactiveColor: Colors.yellow.withOpacity(0.2),
                     activeColor: Colors.yellow.withOpacity(0.2),
                     value: getPage().toDouble() /
-                        (totalrenders == 0 ? 1 : totalrenders),
+                        total,
                     onChanged: (double value) {
                       carouselController
-                          .jumpToPage((value * totalrenders).toInt());
+                          .jumpToPage((value * total).toInt());
                     },
                   ),
                 ),
@@ -295,15 +296,15 @@ class _MyHomePageState extends State<MyHomePage> {
                 )),
                 Flexible(
                   child: Slider(
-                    divisions: totalrenders == 0 ? 1 : totalrenders,
+                    divisions: total,
                     thumbColor: Colors.green,
                     inactiveColor: Colors.yellow.withOpacity(0.2),
                     activeColor: Colors.yellow.withOpacity(0.2),
                     value: getPage().toDouble() /
-                        (totalrenders == 0 ? 1 : totalrenders),
+                        total,
                     onChanged: (double value) {
                       carouselController
-                          .jumpToPage((value * totalrenders).toInt());
+                          .jumpToPage((value * total).toInt());
                     },
                   ),
                 ),
@@ -554,11 +555,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void updateSecondarySlider() {
     int k = getPage();
-    for (int i = getPage(); i < totalrenders; i++) {
+    for (int i = getPage(); i < src.length; i++) {
       if (src[i].image == null) break;
       k++;
     }
-    setLoading(k / totalrenders);
+    setLoading(k / src.length);
   }
 }
 
