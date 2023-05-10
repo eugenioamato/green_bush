@@ -70,8 +70,8 @@ class _MyHomePageState extends State<MyHomePage> {
     pool = Pool(maxThreads, timeout: const Duration(seconds: 21));
     pool2 = Pool(maxThreads, timeout: const Duration(seconds: 21));
     if (Platform.isWindows || Platform.isMacOS) {
-      range = 100;
-      maxThreads = 100;
+      range = 50;
+      maxThreads = 50;
     }
     super.initState();
   }
@@ -90,14 +90,8 @@ class _MyHomePageState extends State<MyHomePage> {
       if (totalrenders > range) {
         removeFromCache(src[(page - range) % len]);
       }
-    } else {
-      if (page - range >= 0) {
-        pool2.withResource(() => precache(src[(page - range)]));
-      }
-      if (totalrenders > range) {
-        removeFromCache(src[(page + range)]);
-      }
     }
+
     updateSecondarySlider();
     if (src[page].image == null) {
       setAuto(false);
@@ -163,6 +157,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           getAuto: getAuto,
                           setAuto: setAuto,
                           precache: precache,
+                          getPrecaching: getPrecaching,
                           focusNode: focusNode,
                           carouselController: carouselController,
                         ),
@@ -172,11 +167,11 @@ class _MyHomePageState extends State<MyHomePage> {
                         child: IconButton(
                           iconSize: 32,
                           onPressed: () {},
-                          icon: Icon((totalThreads > (maxThreads * 2 * 0.7))
+                          icon: Icon((totalThreads > (maxThreads * 0.7))
                               ? Icons.hourglass_full
-                              : (totalThreads > (maxThreads * 2 * 0.5))
+                              : (totalThreads > (maxThreads * 0.5))
                                   ? Icons.hourglass_bottom
-                                  : (totalThreads > (maxThreads * 2 * 0.1))
+                                  : (totalThreads > (maxThreads * 0.1))
                                       ? Icons.hourglass_empty
                                       : Icons.check),
                           color: (Colors.green),
@@ -315,6 +310,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     getPage: getPage,
                     setAuto: setAuto,
                     precache: precache,
+                    getPrecaching: getPrecaching,
                     focusNode: focusNode,
                     carouselController: carouselController,
                   ),
@@ -463,11 +459,14 @@ class _MyHomePageState extends State<MyHomePage> {
     }
     src[index] = updatedShot;
     final page = getPage();
-    if (index - page <= range && index - page > -5) {
-      if (url.isNotEmpty) pool2.withResource(() => precache(updatedShot));
+    if (url.isNotEmpty) {
+      if ((index - page <= range) && (index - page > -5)) {
+        if (!precaching.contains(job)) {
+        pool2.withResource(() => precache(updatedShot));}
+      }
+      activeThreads--;
+      setState(() {});
     }
-    activeThreads--;
-    setState(() {});
   }
 
   void removeFromCache(Shot s) {
@@ -477,7 +476,11 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  Set<String> precaching={};
+  Set<String> getPrecaching()=>precaching;
+
   void precache(Shot s) {
+    precaching.add(s.id);
     if (s.image != null) return;
     final url = s.url;
     if (url.isEmpty) return;
@@ -827,6 +830,7 @@ class CarouselWidget extends StatefulWidget {
   final Function getPage;
   final Function getAuto;
   final Function precache;
+  final Function getPrecaching;
 
   final Function setAuto;
   const CarouselWidget(
@@ -838,7 +842,7 @@ class CarouselWidget extends StatefulWidget {
       required this.setPage,
       required this.getPage,
       required this.setAuto,
-      required this.precache})
+      required this.precache, required this.getPrecaching})
       : super(key: key);
 
   @override
@@ -880,6 +884,7 @@ class _CarouselWidgetState extends State<CarouselWidget> {
                     shot: e,
                     setAuto: widget.setAuto,
                     precache: widget.precache,
+                    getPrecaching: widget.getPrecaching,
                   ))
               .toList(),
           carouselController: widget.carouselController,
@@ -1004,18 +1009,21 @@ class Thumb extends StatelessWidget {
   final Shot shot;
   final Function setAuto;
   final Function precache;
+  final Function getPrecaching;
 
   const Thumb({
     Key? key,
     required this.shot,
     required this.setAuto,
-    required this.precache,
+    required this.precache, required this.getPrecaching,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     if (shot.url.isNotEmpty && shot.image == null) {
-      precache(shot);
+      if (!getPrecaching().contains(shot.id)) {
+        precache(shot);
+      }
     }
     return IntrinsicHeight(
       child: GestureDetector(
