@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
@@ -50,7 +51,7 @@ class _MyHomePageState extends State<MyHomePage> {
   CarouselController carouselController = CarouselController();
   int activeThreads = 0;
   int getActiveThreads() => activeThreads;
-
+  int maxThreads = 170;
   bool _auto = false;
   bool getAuto() => _auto;
   void setAuto(v) => setState(() {
@@ -63,27 +64,31 @@ class _MyHomePageState extends State<MyHomePage> {
     if (kDebugMode) {
       print('API_KEY IS $apiKey');
     }
+    pool = Pool(maxThreads, timeout: const Duration(seconds: 21));
+    if (Platform.isWindows || Platform.isMacOS) {
+      range = 100;
+      maxThreads = 300;
+    }
     super.initState();
   }
 
   int totalrenders = 0;
-
+  int range = 30;
   int _page = 0;
   void setPage(page) {
-    var range = 30;
     var len = src.length;
     if (len == 0) {
       _page = 0;
       return;
     }
     if (_page < page) {
-      precache(src[(page + range) % len].url);
+      precache(src[(page + range) % len]);
       if (page - range >= 0) {
         CachedNetworkImage.evictFromCache(src[(page - range)].url);
       }
     } else {
       if (page - range >= 0) {
-        precache(src[(page - range) % len].url);
+        precache(src[(page - range) % len]);
       }
       CachedNetworkImage.evictFromCache(src[(page + range) % len].url);
     }
@@ -130,78 +135,122 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Colors.black,
         body: OrientationBuilder(builder: (context, orientation) {
           if (orientation == Orientation.landscape) {
-            return Stack(
+            return Flex(
+              direction: Axis.vertical,
               children: [
-                Align(
-                  alignment: AlignmentDirectional.center,
-                  child: CarouselWidget(
-                    src: src,
-                    setPage: setPage,
-                    getPage: getPage,
-                    getAuto: getAuto,
-                    setAuto: setAuto,
-                    focusNode: focusNode,
-                    carouselController: carouselController,
-                  ),
-                ),
-                Align(
-                  alignment: Alignment(0.95, 0.95),
-                  child: IconButton(
-                      iconSize: 32,
-                      onPressed: () {
-                        setState(() {
-                          setAuto(!getAuto());
-                        });
-                      },
-                      icon: Icon(
-                        (getAuto()
-                            ? Icons.play_circle
-                            : Icons.play_circle_outline),
-                        color: (Colors.green),
-                      )),
-                ),
-                Align(
-                  alignment: Alignment(-0.95, -0.95),
-                  child: IntrinsicWidth(
-                    child: ExpansionTile(
-                      title: Icon(
-                        Icons.auto_awesome,
-                        color: Colors.white,
-                        size: 32,
+                Expanded(
+                  flex: 15,
+                  child: Stack(
+                    children: [
+                      Align(
+                        alignment: AlignmentDirectional.center,
+                        child: CarouselWidget(
+                          src: src,
+                          setPage: setPage,
+                          getPage: getPage,
+                          getAuto: getAuto,
+                          setAuto: setAuto,
+                          focusNode: focusNode,
+                          carouselController: carouselController,
+                        ),
                       ),
-                      children: [
-                        IntrinsicHeight(
-                          child: SettingsWidget(
-                            showActions: true,
-                            orientation: orientation,
-                            getActiveThreads: getActiveThreads,
-                            refreshCallback: () {
-                              setState(() {});
+                      Align(
+                        alignment: Alignment(0.95, -0.95),
+                        child: IconButton(
+                          iconSize: 32,
+                          onPressed: () {},
+                          icon: Icon((getActiveThreads() > (maxThreads - 10))
+                              ? Icons.hourglass_full
+                              : (getActiveThreads() > (maxThreads * 0.5))
+                                  ? Icons.hourglass_bottom
+                                  : (getActiveThreads() > (maxThreads * 0.1))
+                                      ? Icons.hourglass_empty
+                                      : Icons.check),
+                          color: (Colors.green),
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment(-0.95, 0.95),
+                        child: IconButton(
+                            iconSize: 32,
+                            onPressed: () {
+                              setState(() {
+                                setAuto(!getAuto());
+                              });
                             },
-                            controller: controller,
-                            controller2: controller2,
-                            cfgSliderEValue: cfgSliderEValue,
-                            setCfgSliderEValue: setCfgSliderEValue,
-                            cfgSliderValue: cfgSliderValue,
-                            setCfgSliderValue: setCfgSliderValue,
-                            stepSliderEValue: stepSliderEValue,
-                            setStepSliderValue: setStepSliderValue,
-                            stepSliderValue: stepSliderValue,
-                            setStepSliderEValue: setStepSliderEValue,
-                            setAuto: setAuto,
-                            getAuto: getAuto,
-                            multispanCallback: _multiSpan,
+                            icon: Icon(
+                              (getAuto()
+                                  ? Icons.play_circle
+                                  : Icons.play_circle_outline),
+                              color: (Colors.green),
+                            )),
+                      ),
+                      Align(
+                        alignment: Alignment(-0.95, -0.95),
+                        child: IntrinsicWidth(
+                          child: ExpansionTile(
+                            iconColor: Colors.black,
+                            title: Align(
+                              alignment: Alignment(-0.95, -0.95),
+                              child: Icon(
+                                Icons.auto_awesome,
+                                color: Colors.white,
+                                size: 32,
+                              ),
+                            ),
+                            children: [
+                              IntrinsicHeight(
+                                child: Card(
+                                  color: Colors.black,
+                                  child: SettingsWidget(
+                                    showActions: true,
+                                    orientation: orientation,
+                                    getActiveThreads: getActiveThreads,
+                                    refreshCallback: () {
+                                      setState(() {});
+                                    },
+                                    controller: controller,
+                                    controller2: controller2,
+                                    cfgSliderEValue: cfgSliderEValue,
+                                    setCfgSliderEValue: setCfgSliderEValue,
+                                    cfgSliderValue: cfgSliderValue,
+                                    setCfgSliderValue: setCfgSliderValue,
+                                    stepSliderEValue: stepSliderEValue,
+                                    setStepSliderValue: setStepSliderValue,
+                                    stepSliderValue: stepSliderValue,
+                                    setStepSliderEValue: setStepSliderEValue,
+                                    setAuto: setAuto,
+                                    getAuto: getAuto,
+                                    multispanCallback: _multiSpan,
+                                  ),
+                                ),
+                              )
+                            ],
                           ),
-                        )
-                      ],
-                    ),
+                        ),
+                      ),
+                      Align(
+                        alignment: const Alignment(0, 0.75),
+                        child: Text(
+                          '${getPage()} / ${src.length} / $totalrenders',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                Align(
-                  alignment: const Alignment(0, 0.95),
-                  child: Text(
-                    '${getPage()} / ${src.length} / $totalrenders',
-                    style: Theme.of(context).textTheme.bodyMedium,
+                Flexible(
+                  child: Slider(
+                    divisions: totalrenders == 0 ? 1 : totalrenders,
+                    thumbColor: Colors.green,
+                    inactiveColor: Colors.yellow.withOpacity(0.2),
+                    activeColor: Colors.yellow.withOpacity(0.2),
+                    value: getPage().toDouble() /
+                        (totalrenders == 0 ? 1 : totalrenders),
+                    onChanged: (double value) {
+                      carouselController
+                          .jumpToPage((value * totalrenders).toInt());
+                    },
                   ),
                 ),
               ],
@@ -233,6 +282,20 @@ class _MyHomePageState extends State<MyHomePage> {
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 )),
+                Flexible(
+                  child: Slider(
+                    divisions: totalrenders == 0 ? 1 : totalrenders,
+                    thumbColor: Colors.green,
+                    inactiveColor: Colors.yellow.withOpacity(0.2),
+                    activeColor: Colors.yellow.withOpacity(0.2),
+                    value: getPage().toDouble() /
+                        (totalrenders == 0 ? 1 : totalrenders),
+                    onChanged: (double value) {
+                      carouselController
+                          .jumpToPage((value * totalrenders).toInt());
+                    },
+                  ),
+                ),
                 Expanded(
                   flex: 8,
                   child: CarouselWidget(
@@ -289,12 +352,12 @@ class _MyHomePageState extends State<MyHomePage> {
     });
 
     final data = <String, dynamic>{
-      "model": method,
+      "model": methods[method],
       "prompt": prompt,
       "negative_prompt": nprompt,
       "steps": steps,
       "cfg_scale": cfg,
-      "sampler": sampler,
+      "sampler": samplers[sampler],
       "aspect_ratio": "landscape",
       "seed": seed,
       "upscale": false,
@@ -368,8 +431,8 @@ class _MyHomePageState extends State<MyHomePage> {
     }
     src[index] = updatedShot;
     final page = getPage();
-    if (index - page < 30 && index - page > -5) {
-      if (url.isNotEmpty) precache(url);
+    if (index - page <= range && index - page > -5) {
+      if (url.isNotEmpty) precache(updatedShot);
     }
 
     activeThreads--;
@@ -377,7 +440,8 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {});
   }
 
-  void precache(url) {
+  void precache(Shot s) {
+    final url=s.url;
     Image(
       image: CachedNetworkImageProvider(url),
     )
@@ -406,7 +470,7 @@ class _MyHomePageState extends State<MyHomePage> {
     "Euler a",
     "Heun",
   ];
-  final pool = Pool(170, timeout: const Duration(seconds: 21));
+  late final pool;
 
   void _multiSpan() {
     carouselController.jumpToPage(0);
@@ -426,8 +490,8 @@ class _MyHomePageState extends State<MyHomePage> {
     if (seed == -1) {
       seed = Random().nextInt(199999999);
     }
-    for (String method in methods) {
-      for (String sampler in samplers) {
+    for (int method = 0; method < methods.length; method++) {
+      for (int sampler = 0; sampler < samplers.length; sampler++) {
         for (int cfg = cfgSliderValue.toInt();
             cfg < cfgSliderEValue + 1;
             cfg++) {
@@ -506,6 +570,9 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                     child: Card(
                       color: Colors.black,
                       child: Slider.adaptive(
+                          thumbColor: Colors.green,
+                          inactiveColor: Colors.yellow.withOpacity(0.2),
+                          activeColor: Colors.yellow.withOpacity(0.2),
                           value: widget.cfgSliderValue,
                           min: 1,
                           max: widget.cfgSliderEValue,
@@ -519,6 +586,9 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                     child: Card(
                       color: Colors.black,
                       child: Slider.adaptive(
+                          thumbColor: Colors.green,
+                          inactiveColor: Colors.yellow.withOpacity(0.2),
+                          activeColor: Colors.yellow.withOpacity(0.2),
                           value: widget.stepSliderValue,
                           min: 1,
                           max: widget.stepSliderEValue,
@@ -543,9 +613,12 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                     child: Card(
                       color: Colors.black,
                       child: Slider.adaptive(
+                          thumbColor: Colors.green,
+                          inactiveColor: Colors.yellow.withOpacity(0.2),
+                          activeColor: Colors.yellow.withOpacity(0.2),
                           value: widget.cfgSliderEValue,
                           min: widget.cfgSliderValue,
-                          max: 30,
+                          max: 20,
                           onChanged: (v) {
                             widget.setCfgSliderEValue(v);
                             widget.refreshCallback();
@@ -556,6 +629,9 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                     child: Card(
                       color: Colors.black,
                       child: Slider.adaptive(
+                          thumbColor: Colors.green,
+                          inactiveColor: Colors.yellow.withOpacity(0.2),
+                          activeColor: Colors.yellow.withOpacity(0.2),
                           value: widget.stepSliderEValue,
                           min: widget.stepSliderValue,
                           max: 50,
@@ -636,19 +712,6 @@ class _ActionsWidgetState extends State<ActionsWidget> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Expanded(
-                  child: IconButton(
-                      onPressed: () => widget.multispanCallback(),
-                      icon: Icon(
-                        Icons.generating_tokens,
-                        color: (widget.getActiveThreads() == 0
-                            ? Colors.green
-                            : widget.getActiveThreads() > 50
-                                ? Colors.red
-                                : Colors.orange),
-                      )),
-                ),
-                Flexible(child: Text(':${widget.getActiveThreads()}')),
-                Expanded(
                     child: IconButton(
                         onPressed: () {
                           setState(() {
@@ -661,7 +724,19 @@ class _ActionsWidgetState extends State<ActionsWidget> {
                               ? Icons.play_circle
                               : Icons.play_circle_outline),
                           color: (Colors.green),
-                        )))
+                        ))),
+                Expanded(
+                  child: IconButton(
+                      onPressed: () => widget.multispanCallback(),
+                      icon: Icon(
+                        Icons.generating_tokens,
+                        color: (widget.getActiveThreads() == 0
+                            ? Colors.green
+                            : widget.getActiveThreads() > 50
+                                ? Colors.red
+                                : Colors.orange),
+                      )),
+                ),
               ]),
         ),
       ],
@@ -808,8 +883,8 @@ class Shot implements Comparable<Shot> {
   final int cfg;
   final int steps;
   final int seed;
-  final String method;
-  final String sampler;
+  final int method;
+  final int sampler;
 
   @override
   int compareTo(Shot other) {
