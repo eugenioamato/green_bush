@@ -145,7 +145,7 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Colors.black,
         body: OrientationBuilder(builder: (context, orientation) {
           final total = (src.length) < 2 ? 1 : (src.length) - 1;
-          final totalThreads=getActiveThreads();
+          final totalThreads = getActiveThreads();
           if (orientation == Orientation.landscape) {
             return Flex(
               direction: Axis.vertical,
@@ -172,11 +172,11 @@ class _MyHomePageState extends State<MyHomePage> {
                         child: IconButton(
                           iconSize: 32,
                           onPressed: () {},
-                          icon: Icon((totalThreads > (maxThreads*2 * 0.7))
+                          icon: Icon((totalThreads > (maxThreads * 2 * 0.7))
                               ? Icons.hourglass_full
-                              : (totalThreads > (maxThreads*2 * 0.5))
+                              : (totalThreads > (maxThreads * 2 * 0.5))
                                   ? Icons.hourglass_bottom
-                                  : (totalThreads > (maxThreads*2 * 0.1))
+                                  : (totalThreads > (maxThreads * 2 * 0.1))
                                       ? Icons.hourglass_empty
                                       : Icons.check),
                           color: (Colors.green),
@@ -522,7 +522,6 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       s.image = image;
     });
-
   }
 
   final methods = [
