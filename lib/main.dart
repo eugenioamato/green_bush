@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:gif_view/gif_view.dart';
 import 'package:pool/pool.dart';
@@ -51,12 +50,16 @@ class _MyHomePageState extends State<MyHomePage> {
   CarouselController carouselController = CarouselController();
   int activeThreads = 0;
   int getActiveThreads() => activeThreads;
-  int maxThreads = 170;
+  int maxThreads = 50;
   bool _auto = false;
   bool getAuto() => _auto;
   void setAuto(v) => setState(() {
         _auto = v;
       });
+
+  double _loading = 0.0;
+  double getLoading() => _loading;
+  void setLoading(double rate) => _loading = rate;
   late final String apiKey;
   @override
   void initState() {
@@ -67,7 +70,7 @@ class _MyHomePageState extends State<MyHomePage> {
     pool = Pool(maxThreads, timeout: const Duration(seconds: 21));
     if (Platform.isWindows || Platform.isMacOS) {
       range = 100;
-      maxThreads = 300;
+      maxThreads = 170;
     }
     super.initState();
   }
@@ -83,14 +86,20 @@ class _MyHomePageState extends State<MyHomePage> {
     }
     if (_page < page) {
       precache(src[(page + range) % len]);
-      if (page - range >= 0) {
-        CachedNetworkImage.evictFromCache(src[(page - range)].url);
+      if (totalrenders > range && (page - range >= 0)) {
+        removeFromCache(src[(page - range)]);
       }
     } else {
       if (page - range >= 0) {
-        precache(src[(page - range) % len]);
+        precache(src[(page - range)]);
       }
-      CachedNetworkImage.evictFromCache(src[(page + range) % len].url);
+      if (totalrenders > range) {
+        removeFromCache(src[(page + range)]);
+      }
+    }
+    updateSecondarySlider();
+    if (src[page].image == null) {
+      setAuto(false);
     }
     setState(() {
       _page = page;
@@ -120,7 +129,7 @@ class _MyHomePageState extends State<MyHomePage> {
     controller2.dispose();
     for (var s in src) {
       if (s.url.isNotEmpty) {
-        CachedNetworkImage.evictFromCache(s.url);
+        removeFromCache(s);
       }
       src.clear();
     }
@@ -150,12 +159,13 @@ class _MyHomePageState extends State<MyHomePage> {
                           getPage: getPage,
                           getAuto: getAuto,
                           setAuto: setAuto,
+                          precache: precache,
                           focusNode: focusNode,
                           carouselController: carouselController,
                         ),
                       ),
                       Align(
-                        alignment: Alignment(0.95, -0.95),
+                        alignment: const Alignment(0.95, -0.95),
                         child: IconButton(
                           iconSize: 32,
                           onPressed: () {},
@@ -170,7 +180,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         ),
                       ),
                       Align(
-                        alignment: Alignment(-0.95, 0.95),
+                        alignment: const Alignment(-0.95, 0.95),
                         child: IconButton(
                             iconSize: 32,
                             onPressed: () {
@@ -186,11 +196,11 @@ class _MyHomePageState extends State<MyHomePage> {
                             )),
                       ),
                       Align(
-                        alignment: Alignment(-0.95, -0.95),
+                        alignment: const Alignment(-0.95, -0.95),
                         child: IntrinsicWidth(
                           child: ExpansionTile(
                             iconColor: Colors.black,
-                            title: Align(
+                            title: const Align(
                               alignment: Alignment(-0.95, -0.95),
                               child: Icon(
                                 Icons.auto_awesome,
@@ -241,6 +251,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
                 Flexible(
                   child: Slider(
+                    secondaryTrackValue: getLoading(),
                     divisions: totalrenders == 0 ? 1 : totalrenders,
                     thumbColor: Colors.green,
                     inactiveColor: Colors.yellow.withOpacity(0.2),
@@ -304,6 +315,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     setPage: setPage,
                     getPage: getPage,
                     setAuto: setAuto,
+                    precache: precache,
                     focusNode: focusNode,
                     carouselController: carouselController,
                   ),
@@ -375,7 +387,7 @@ class _MyHomePageState extends State<MyHomePage> {
     final resp = jsonDecode(result.toString());
     final String job = resp['job'];
     final earlyShot =
-        Shot(job, '', prompt, nprompt, cfg, steps, seed, method, sampler);
+        Shot(job, '', prompt, nprompt, cfg, steps, seed, method, sampler, null);
     src.add(earlyShot);
     setState(() {});
 
@@ -384,16 +396,38 @@ class _MyHomePageState extends State<MyHomePage> {
 
     int r = 0;
     do {
-      final result2 = await dio.get("https://api.prodia.com/v1/job/$job",
-          options: Options(headers: {
-            "X-Prodia-Key": apiKey,
-            'accept': 'application/json',
-          }));
-      final resp2 = jsonDecode(result2.toString());
+      Response result2;
       try {
+        result2 = await dio.get("https://api.prodia.com/v1/job/$job",
+            options: Options(headers: {
+              "X-Prodia-Key": apiKey,
+              'accept': 'application/json',
+            }));
+      } on Exception catch (e) {
+        if (kDebugMode) {
+          print('error during job creation : $e');
+        }
+        var index = -1;
+        for (int i = 0; i < src.length; i++) {
+          if (src[i].id == job) {
+            index = i;
+            break;
+          }
+        }
+        if (index == -1) return;
+        src.removeAt(index);
+        totalrenders--;
+        activeThreads--;
+        setState(() {});
+        return;
+      }
+
+      final resp2 = jsonDecode(result2.toString());
+      if (resp2.containsKey('imageUrl')) {
         url = resp2['imageUrl'];
-      } catch (e) {
+      } else {
         await Future.delayed(const Duration(seconds: 5));
+        print('Still trying $job');
         if (r > 10) {
           var index = -1;
           for (int i = 0; i < src.length; i++) {
@@ -413,8 +447,8 @@ class _MyHomePageState extends State<MyHomePage> {
       }
     } while (url.isEmpty);
 
-    final updatedShot =
-        Shot(job, url, prompt, nprompt, cfg, steps, seed, method, sampler);
+    final updatedShot = Shot(
+        job, url, prompt, nprompt, cfg, steps, seed, method, sampler, null);
     var index = -1;
     for (int i = 0; i < src.length; i++) {
       if (src[i].id == job) {
@@ -434,20 +468,31 @@ class _MyHomePageState extends State<MyHomePage> {
     if (index - page <= range && index - page > -5) {
       if (url.isNotEmpty) precache(updatedShot);
     }
-
     activeThreads--;
-
     setState(() {});
   }
 
+  void removeFromCache(Shot s) {
+    if (s.image != null) {
+      print('removing ${s.id}');
+      s.image?.image.evict();
+      s.image = null;
+    }
+  }
+
   void precache(Shot s) {
-    final url=s.url;
-    Image(
-      image: CachedNetworkImageProvider(url),
-    )
-        .image
+    if (s.image != null) return;
+    print('precaching ${s.id}');
+    final url = s.url;
+    final image = Image(
+      image: Image.network(
+        url,
+      ).image,
+    );
+    image.image
         .resolve(const ImageConfiguration())
         .addListener(ImageStreamListener((_, __) {
+      updateSecondarySlider();
       if (mounted) {
         setState(() {});
         final bytes = PaintingBinding.instance.imageCache.currentSizeBytes;
@@ -457,6 +502,8 @@ class _MyHomePageState extends State<MyHomePage> {
         }
       }
     }));
+
+    s.image = image;
   }
 
   final methods = [
@@ -470,13 +517,13 @@ class _MyHomePageState extends State<MyHomePage> {
     "Euler a",
     "Heun",
   ];
-  late final pool;
+  late final Pool pool;
 
   void _multiSpan() {
     carouselController.jumpToPage(0);
     focusNode.requestFocus();
     for (var s in src) {
-      CachedNetworkImage.evictFromCache(s.url);
+      removeFromCache(s);
     }
     totalrenders = 0;
     setState(() {
@@ -501,11 +548,20 @@ class _MyHomePageState extends State<MyHomePage> {
             totalrenders++;
             pool.withResource(() => _startGeneration(
                 prompt, nprompt, method, sampler, cfg, steps, seed, apiKey));
-            Future.delayed(Duration(milliseconds: 50));
+            Future.delayed(const Duration(milliseconds: 50));
           }
         }
       }
     }
+  }
+
+  void updateSecondarySlider() {
+    int k = getPage();
+    for (int i = getPage(); i < totalrenders; i++) {
+      if (src[i].image == null) break;
+      k++;
+    }
+    setLoading(k / totalrenders);
   }
 }
 
@@ -751,6 +807,7 @@ class CarouselWidget extends StatefulWidget {
   final Function setPage;
   final Function getPage;
   final Function getAuto;
+  final Function precache;
 
   final Function setAuto;
   const CarouselWidget(
@@ -761,7 +818,8 @@ class CarouselWidget extends StatefulWidget {
       required this.getAuto,
       required this.setPage,
       required this.getPage,
-      required this.setAuto})
+      required this.setAuto,
+      required this.precache})
       : super(key: key);
 
   @override
@@ -796,27 +854,29 @@ class _CarouselWidgetState extends State<CarouselWidget> {
           }
         }
       },
-      child: CarouselSlider(
-        items: widget.src
-            .map((e) => Thumb(
-                  label: e.label,
-                  url: e.url,
-                  setAuto: widget.setAuto,
-                ))
-            .toList(),
-        carouselController: widget.carouselController,
-        options: CarouselOptions(
-          initialPage: widget.getPage(),
-          onPageChanged: (index, reason) {
-            widget.setPage(index);
-          },
-          pauseAutoPlayOnTouch: true,
-          autoPlay: widget.getAuto(),
-          autoPlayAnimationDuration: const Duration(milliseconds: 1),
-          scrollDirection: Axis.vertical,
-          enableInfiniteScroll: false,
-          autoPlayInterval: const Duration(milliseconds: 500),
-          viewportFraction: 1.0,
+      child: IntrinsicHeight(
+        child: CarouselSlider(
+          items: widget.src
+              .map((e) => Thumb(
+                    shot: e,
+                    setAuto: widget.setAuto,
+                    precache: widget.precache,
+                  ))
+              .toList(),
+          carouselController: widget.carouselController,
+          options: CarouselOptions(
+            initialPage: widget.getPage(),
+            onPageChanged: (index, reason) {
+              widget.setPage(index);
+            },
+            pauseAutoPlayOnTouch: true,
+            autoPlay: widget.getAuto(),
+            autoPlayAnimationDuration: const Duration(milliseconds: 1),
+            scrollDirection: Axis.vertical,
+            enableInfiniteScroll: false,
+            autoPlayInterval: const Duration(milliseconds: 500),
+            viewportFraction: 1.0,
+          ),
         ),
       ),
     );
@@ -873,7 +933,7 @@ class PromptsWidget extends StatelessWidget {
 
 class Shot implements Comparable<Shot> {
   Shot(this.id, this.url, this.prompt, this.nprompt, this.cfg, this.steps,
-      this.seed, this.method, this.sampler);
+      this.seed, this.method, this.sampler, this.image);
 
   String get label => '$seed $method > $sampler $cfg $steps';
   final String id;
@@ -885,6 +945,7 @@ class Shot implements Comparable<Shot> {
   final int seed;
   final int method;
   final int sampler;
+  Image? image;
 
   @override
   int compareTo(Shot other) {
@@ -921,34 +982,35 @@ class Shot implements Comparable<Shot> {
 }
 
 class Thumb extends StatelessWidget {
-  final String label;
-  final String url;
+  final Shot shot;
   final Function setAuto;
+  final Function precache;
 
   const Thumb({
     Key? key,
-    required this.label,
-    required this.url,
+    required this.shot,
     required this.setAuto,
+    required this.precache,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-        onTap: () {
-          setAuto(false);
-          launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-        },
-        child: (url.isEmpty)
-            ? GifView.asset('assets/images/loading.gif')
-            : CachedNetworkImage(
-                imageUrl: url,
-                fit: BoxFit.contain,
-                progressIndicatorBuilder: (c, s, p) => LinearProgressIndicator(
-                  value: p.progress,
-                  color: Colors.black,
-                  backgroundColor: Colors.black,
-                ),
-              ));
+    if (shot.url.isNotEmpty && shot.image == null) {
+      precache(shot);
+    }
+    return IntrinsicHeight(
+      child: GestureDetector(
+          onTap: () {
+            setAuto(false);
+            launchUrl(Uri.parse(shot.url),
+                mode: LaunchMode.externalApplication);
+          },
+          child: (shot.url.isEmpty || shot.image == null)
+              ? GifView.asset('assets/images/loading.gif')
+              : FittedBox(
+                  fit: BoxFit.contain,
+                  child: shot.image,
+                )),
+    );
   }
 }
