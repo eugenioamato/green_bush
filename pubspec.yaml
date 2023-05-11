@@ -16,6 +16,7 @@ dependencies:
   pool: ^1.5.1
   gif_view: ^0.3.1
   flutter_native_splash: ^2.2.19
+  wakelock: ^0.6.2
 
 dev_dependencies:
   flutter_test:

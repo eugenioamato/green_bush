@@ -8,6 +8,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:wakelock/wakelock.dart';
 
 void main() {
   runApp(const MyApp());
@@ -175,6 +176,7 @@ class _MyHomePageState extends State<MyHomePage> {
       range = 50;
       maxThreads = 50;
     }
+    Wakelock.disable();
     super.initState();
   }
 
@@ -240,6 +242,7 @@ class _MyHomePageState extends State<MyHomePage> {
       }
       src.clear();
     }
+    Wakelock.enable();
     super.dispose();
   }
 
