@@ -19,20 +19,112 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-          primarySwatch: Colors.blue,
-          textTheme: const TextTheme(
-              bodyMedium: TextStyle(
-            color: Colors.white,
-            fontSize: 8,
-            fontFamily: 'PressStart2P',
-          ))),
+      title: 'GreenBush',
+      theme: _buildShrineTheme(),
       debugShowCheckedModeBanner: false,
-      home: const MyHomePage(title: 'Video Revolution'),
+      home: const MyHomePage(title: 'GreenBush'),
+    );
+  }
+
+  ThemeData _buildShrineTheme() {
+    final ThemeData base = ThemeData.light();
+    return base.copyWith(
+      primaryColor: bushColor100,
+      scaffoldBackgroundColor: shrineBackgroundWhite,
+      cardColor: shrineBackgroundWhite,
+      primaryIconTheme: _customIconTheme(base.iconTheme),
+      textTheme: _buildShrineTextTheme(base.textTheme),
+      primaryTextTheme: _buildShrineTextTheme(base.primaryTextTheme),
+      iconTheme: _customIconTheme(base.iconTheme),
+      checkboxTheme: CheckboxThemeData(
+        fillColor: MaterialStateProperty.resolveWith<Color?>(
+            (Set<MaterialState> states) {
+          if (states.contains(MaterialState.disabled)) {
+            return null;
+          }
+          if (states.contains(MaterialState.selected)) {
+            return bushColor400;
+          }
+          return Colors.green;
+        }),
+      ),
+      radioTheme: RadioThemeData(
+        fillColor: MaterialStateProperty.resolveWith<Color?>(
+            (Set<MaterialState> states) {
+          if (states.contains(MaterialState.disabled)) {
+            return null;
+          }
+          if (states.contains(MaterialState.selected)) {
+            return bushColor400;
+          }
+          return null;
+        }),
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: MaterialStateProperty.resolveWith<Color?>(
+            (Set<MaterialState> states) {
+          if (states.contains(MaterialState.disabled)) {
+            return null;
+          }
+          if (states.contains(MaterialState.selected)) {
+            return bushColor400;
+          }
+          return null;
+        }),
+        trackColor: MaterialStateProperty.resolveWith<Color?>(
+            (Set<MaterialState> states) {
+          if (states.contains(MaterialState.disabled)) {
+            return null;
+          }
+          if (states.contains(MaterialState.selected)) {
+            return bushColor400;
+          }
+          return null;
+        }),
+      ),
+      colorScheme: _shrineColorScheme
+          .copyWith(error: shrineErrorRed)
+          .copyWith(secondary: shrineBrown900),
+    );
+  }
+
+  IconThemeData _customIconTheme(IconThemeData original) {
+    return original.copyWith(color: shrineBrown900);
+  }
+
+  TextTheme _buildShrineTextTheme(TextTheme base) {
+    return base.apply(
+      fontFamily: 'PressStart2P',
+      displayColor: shrineBrown900,
+      bodyColor: shrineBrown900,
     );
   }
 }
+
+const ColorScheme _shrineColorScheme = ColorScheme(
+  primary: bushColor100,
+  secondary: bushColor50,
+  surface: shrineSurfaceWhite,
+  background: shrineBackgroundWhite,
+  error: shrineErrorRed,
+  onPrimary: shrineBrown900,
+  onSecondary: shrineBrown900,
+  onSurface: shrineBrown900,
+  onBackground: shrineBrown900,
+  onError: shrineSurfaceWhite,
+  brightness: Brightness.light,
+);
+
+const Color bushColor50 = Colors.limeAccent;
+const Color bushColor100 = Colors.lightGreen;
+const Color bushColor300 = Colors.lightGreen;
+const Color bushColor400 = Colors.lightGreen;
+const Color shrineBrown900 = Colors.green;
+const Color shrineBrown600 = Colors.greenAccent;
+const Color shrineErrorRed = Color(0xFFC5032B);
+const Color shrineSurfaceWhite = Color(0xFFFFFBFA);
+const Color shrineBackgroundWhite = Colors.white;
+int maxThreads = 50;
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
@@ -50,12 +142,22 @@ class _MyHomePageState extends State<MyHomePage> {
   CarouselController carouselController = CarouselController();
   int activeThreads = 0;
   int getActiveThreads() => activeThreads;
-  int maxThreads = 50;
+
+  int maxDownloads = 25;
+
+  bool _randomSeed = false;
+  bool getRandomSeed() => _randomSeed;
+  void setRandomSeed(v) => setState(() {
+        _randomSeed = v;
+      });
+
   bool _auto = false;
   bool getAuto() => _auto;
-  void setAuto(v) => setState(() {
-        _auto = v;
-      });
+  void setAuto(v) => _auto = v;
+
+  bool _waiting = false;
+  bool getWaiting() => _waiting;
+  void setWaiting(v) => _waiting = v;
 
   double _loading = 0.0;
   double getLoading() => _loading;
@@ -68,7 +170,7 @@ class _MyHomePageState extends State<MyHomePage> {
       print('API_KEY IS $apiKey');
     }
     pool = Pool(maxThreads, timeout: const Duration(seconds: 21));
-    pool2 = Pool(maxThreads, timeout: const Duration(seconds: 21));
+    pool2 = Pool(maxDownloads, timeout: const Duration(seconds: 16));
     if (Platform.isWindows || Platform.isMacOS) {
       range = 50;
       maxThreads = 50;
@@ -85,16 +187,26 @@ class _MyHomePageState extends State<MyHomePage> {
       _page = 0;
       return;
     }
-    if (_page < page) {
-      pool2.withResource(() => precache(src[(page + range) % len]));
-      if (totalrenders > range) {
-        removeFromCache(src[(page - range) % len]);
+
+    for (int i = 0; i < len; i++) {
+      int upLimit = page + range;
+      if (upLimit > len) {
+        upLimit = len;
+      }
+      for (int ranger = page; ranger < upLimit; ranger++) {
+        pool2.withResource(() => precache(src[ranger]));
+      }
+      if (totalrenders > range && (page - range >= 0)) {
+        removeFromCache(src[(page - range)]);
       }
     }
 
     updateSecondarySlider();
     if (src[page].image == null) {
-      setAuto(false);
+      if (getAuto()) {
+        setWaiting(true);
+        setAuto(false);
+      }
     }
     setState(() {
       _page = page;
@@ -160,29 +272,36 @@ class _MyHomePageState extends State<MyHomePage> {
                           getPrecaching: getPrecaching,
                           focusNode: focusNode,
                           carouselController: carouselController,
+                          refresh: refresh,
+                          setWaiting: setWaiting,
+                          getWaiting: getWaiting,
                         ),
                       ),
                       Align(
                         alignment: const Alignment(0.95, -0.95),
-                        child: IconButton(
-                          iconSize: 32,
-                          onPressed: () {},
-                          icon: Icon((totalThreads > (maxThreads * 0.7))
-                              ? Icons.hourglass_full
-                              : (totalThreads > (maxThreads * 0.5))
-                                  ? Icons.hourglass_bottom
-                                  : (totalThreads > (maxThreads * 0.1))
-                                      ? Icons.hourglass_empty
-                                      : Icons.check),
-                          color: (Colors.green),
-                        ),
+                        child: Icon((totalThreads > (maxThreads * 0.7))
+                            ? Icons.hourglass_full
+                            : (totalThreads > (maxThreads * 0.5))
+                                ? Icons.hourglass_bottom
+                                : (totalThreads > (maxThreads * 0.1))
+                                    ? Icons.hourglass_empty
+                                    : Icons.check),
+                        //color: (Colors.green),
                       ),
+                      Align(
+                          alignment: const Alignment(0.95, -0.85),
+                          child: Text('$totalThreads/$maxThreads/$maxDownloads')
+                          //color: (Colors.green),
+                          ),
                       Align(
                         alignment: const Alignment(-0.95, 0.95),
                         child: IconButton(
                             iconSize: 32,
                             onPressed: () {
                               setState(() {
+                                if (getAuto()) {
+                                  setWaiting(false);
+                                }
                                 setAuto(!getAuto());
                               });
                             },
@@ -190,19 +309,20 @@ class _MyHomePageState extends State<MyHomePage> {
                               (getAuto()
                                   ? Icons.play_circle
                                   : Icons.play_circle_outline),
-                              color: (Colors.green),
+                              //color: (Colors.green),
+                              color: getWaiting() ? Colors.red : Colors.green,
                             )),
                       ),
                       Align(
                         alignment: const Alignment(-0.95, -0.95),
                         child: IntrinsicWidth(
                           child: ExpansionTile(
-                            iconColor: Colors.black,
-                            title: const Align(
-                              alignment: Alignment(-0.95, -0.95),
+                            iconColor: Colors.transparent,
+                            title: Align(
+                              alignment: const Alignment(-0.95, -0.95),
                               child: Icon(
                                 Icons.auto_awesome,
-                                color: Colors.green,
+                                color: Theme.of(context).primaryColor,
                                 size: 32,
                               ),
                             ),
@@ -217,6 +337,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                     refreshCallback: () {
                                       setState(() {});
                                     },
+                                    getRandomSeed: getRandomSeed,
+                                    setRandomSeed: setRandomSeed,
                                     controller: controller,
                                     controller2: controller2,
                                     cfgSliderEValue: cfgSliderEValue,
@@ -278,6 +400,8 @@ class _MyHomePageState extends State<MyHomePage> {
                       refreshCallback: () {
                         setState(() {});
                       },
+                      getRandomSeed: getRandomSeed,
+                      setRandomSeed: setRandomSeed,
                       setAuto: setAuto,
                       getAuto: getAuto,
                     )),
@@ -313,6 +437,9 @@ class _MyHomePageState extends State<MyHomePage> {
                     getPrecaching: getPrecaching,
                     focusNode: focusNode,
                     carouselController: carouselController,
+                    getWaiting: getWaiting,
+                    setWaiting: setWaiting,
+                    refresh: refresh,
                   ),
                 ),
                 Expanded(
@@ -323,6 +450,8 @@ class _MyHomePageState extends State<MyHomePage> {
                     refreshCallback: () {
                       setState(() {});
                     },
+                    getRandomSeed: getRandomSeed,
+                    setRandomSeed: setRandomSeed,
                     getActiveThreads: getActiveThreads,
                     controller: controller,
                     controller2: controller2,
@@ -409,6 +538,7 @@ class _MyHomePageState extends State<MyHomePage> {
             break;
           }
         }
+
         if (index == -1) return;
         src.removeAt(index);
         totalrenders--;
@@ -422,6 +552,9 @@ class _MyHomePageState extends State<MyHomePage> {
         url = resp2['imageUrl'];
       } else {
         await Future.delayed(const Duration(seconds: 5));
+        if (kDebugMode) {
+          print('retry d:$job r=$r');
+        }
         if (r > 10) {
           var index = -1;
           for (int i = 0; i < src.length; i++) {
@@ -461,8 +594,9 @@ class _MyHomePageState extends State<MyHomePage> {
     final page = getPage();
     if (url.isNotEmpty) {
       if ((index - page <= range) && (index - page > -5)) {
-        if (!precaching.contains(job)) {
-        pool2.withResource(() => precache(updatedShot));}
+        if (!getPrecaching().contains(job)) {
+          pool2.withResource(() => precache(updatedShot));
+        }
       }
       activeThreads--;
       setState(() {});
@@ -476,14 +610,17 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  Set<String> precaching={};
-  Set<String> getPrecaching()=>precaching;
+  Set<String> precaching = {};
+  Set<String> getPrecaching() => precaching;
 
   void precache(Shot s) {
-    precaching.add(s.id);
     if (s.image != null) return;
     final url = s.url;
     if (url.isEmpty) return;
+    getPrecaching().add(s.id);
+    if (kDebugMode) {
+      print('starting precache ${s.id}');
+    }
     activeThreads++;
     late final Image image;
     try {
@@ -504,27 +641,43 @@ class _MyHomePageState extends State<MyHomePage> {
       image.image
           .resolve(const ImageConfiguration())
           .addListener(ImageStreamListener((_, __) {
-        updateSecondarySlider();
-        if (mounted) {
-          setState(() {});
-          final bytes = PaintingBinding.instance.imageCache.currentSizeBytes;
-          final maxbytes = PaintingBinding.instance.imageCache.maximumSizeBytes;
-          if (kDebugMode) {
-            print(':: $bytes / $maxbytes');
-          }
-        }
-      }));
+            //final bytes = PaintingBinding.instance.imageCache.currentSizeBytes;
+            //final maxbytes = PaintingBinding.instance.imageCache.maximumSizeBytes;
+            //if (kDebugMode) {
+            //  print(':: $bytes / $maxbytes');
+            //}
+            getPrecaching().remove(s.id);
+            if (kDebugMode) {
+              print('ending    precache ${s.id} ${getPrecaching()} }');
+            }
+            int index = -1;
+            for (int i = 0; i < src.length; i++) {
+              if (src[i].id == s.id) {
+                index = i;
+                break;
+              }
+            }
+            updateSecondarySlider();
+            if (getPage() == index) {
+              if (mounted) {
+                setState(() {});
+              }
+            }
+          }, onError: (e, stack) {
+            if (kDebugMode) {
+              print('error on listener $e $stack');
+            }
+          }));
     } on Exception catch (e) {
       if (kDebugMode) {
         print('error resolving image $e');
       }
+      getPrecaching().remove(s.id);
       activeThreads--;
       return;
     }
     activeThreads--;
-    setState(() {
-      s.image = image;
-    });
+    s.image = image;
   }
 
   final methods = [
@@ -542,6 +695,8 @@ class _MyHomePageState extends State<MyHomePage> {
   late final Pool pool2;
 
   void _multiSpan() {
+    setAuto(false);
+    setWaiting(false);
     carouselController.jumpToPage(0);
     focusNode.requestFocus();
     for (var s in src) {
@@ -556,8 +711,10 @@ class _MyHomePageState extends State<MyHomePage> {
     var prompt = controller.text;
     var nprompt = controller2.text;
     var seed = -1;
-    if (seed == -1) {
-      seed = Random().nextInt(199999999);
+    if (!getRandomSeed()) {
+      if (seed == -1) {
+        seed = Random().nextInt(199999999);
+      }
     }
     for (int method = 0; method < methods.length; method++) {
       for (int sampler = 0; sampler < samplers.length; sampler++) {
@@ -585,6 +742,10 @@ class _MyHomePageState extends State<MyHomePage> {
     }
     setLoading(k / src.length);
   }
+
+  refresh() {
+    setState(() {});
+  }
 }
 
 class SettingsWidget extends StatefulWidget {
@@ -605,6 +766,8 @@ class SettingsWidget extends StatefulWidget {
   final Function setStepSliderEValue;
   final Function setAuto;
   final Function getAuto;
+  final Function getRandomSeed;
+  final Function setRandomSeed;
 
   const SettingsWidget({
     Key? key,
@@ -625,6 +788,8 @@ class SettingsWidget extends StatefulWidget {
     required this.showActions,
     required this.orientation,
     required this.getActiveThreads,
+    required this.getRandomSeed,
+    required this.setRandomSeed,
   }) : super(key: key);
 
   @override
@@ -737,6 +902,8 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                   setAuto: widget.setAuto,
                   getAuto: widget.getAuto,
                   getActiveThreads: widget.getActiveThreads,
+                  getRandomSeed: widget.getRandomSeed,
+                  setRandomSeed: widget.setRandomSeed,
                 )),
         ],
       ),
@@ -753,6 +920,8 @@ class ActionsWidget extends StatefulWidget {
   final Function getAuto;
   final Function getActiveThreads;
   final Orientation orientation;
+  final Function getRandomSeed;
+  final Function setRandomSeed;
   const ActionsWidget(
       {Key? key,
       required this.controller,
@@ -762,7 +931,9 @@ class ActionsWidget extends StatefulWidget {
       required this.setAuto,
       required this.getAuto,
       required this.orientation,
-      required this.getActiveThreads})
+      required this.getActiveThreads,
+      required this.getRandomSeed,
+      required this.setRandomSeed})
       : super(key: key);
 
   @override
@@ -810,11 +981,16 @@ class _ActionsWidgetState extends State<ActionsWidget> {
                         Icons.generating_tokens,
                         color: (widget.getActiveThreads() == 0
                             ? Colors.green
-                            : widget.getActiveThreads() > 50
+                            : widget.getActiveThreads() > maxThreads * 0.5
                                 ? Colors.red
                                 : Colors.orange),
                       )),
                 ),
+                Expanded(
+                    child: Checkbox(
+                  value: widget.getRandomSeed(),
+                  onChanged: (v) => widget.setRandomSeed(v),
+                )),
               ]),
         ),
       ],
@@ -832,6 +1008,10 @@ class CarouselWidget extends StatefulWidget {
   final Function precache;
   final Function getPrecaching;
 
+  final Function setWaiting;
+  final Function getWaiting;
+  final Function refresh;
+
   final Function setAuto;
   const CarouselWidget(
       {Key? key,
@@ -842,7 +1022,11 @@ class CarouselWidget extends StatefulWidget {
       required this.setPage,
       required this.getPage,
       required this.setAuto,
-      required this.precache, required this.getPrecaching})
+      required this.precache,
+      required this.getPrecaching,
+      required this.setWaiting,
+      required this.getWaiting,
+      required this.refresh})
       : super(key: key);
 
   @override
@@ -885,6 +1069,9 @@ class _CarouselWidgetState extends State<CarouselWidget> {
                     setAuto: widget.setAuto,
                     precache: widget.precache,
                     getPrecaching: widget.getPrecaching,
+                    getWaiting: widget.getWaiting,
+                    refresh: widget.refresh,
+                    setWaiting: widget.setWaiting,
                   ))
               .toList(),
           carouselController: widget.carouselController,
@@ -898,7 +1085,7 @@ class _CarouselWidgetState extends State<CarouselWidget> {
             autoPlayAnimationDuration: const Duration(milliseconds: 1),
             scrollDirection: Axis.vertical,
             enableInfiniteScroll: false,
-            autoPlayInterval: const Duration(milliseconds: 500),
+            autoPlayInterval: const Duration(milliseconds: 800),
             viewportFraction: 1.0,
           ),
         ),
@@ -931,7 +1118,7 @@ class PromptsWidget extends StatelessWidget {
               controller: controller,
               maxLines: orientation == Orientation.landscape ? 1 : 4,
               showCursor: true,
-              cursorColor: Colors.yellow,
+              //cursorColor: Colors.yellow,
               cursorHeight: 10,
               style: Theme.of(context)
                   .textTheme
@@ -1005,38 +1192,66 @@ class Shot implements Comparable<Shot> {
   }
 }
 
-class Thumb extends StatelessWidget {
+class Thumb extends StatefulWidget {
   final Shot shot;
   final Function setAuto;
   final Function precache;
   final Function getPrecaching;
+  final Function setWaiting;
+  final Function getWaiting;
+  final Function refresh;
 
   const Thumb({
     Key? key,
     required this.shot,
     required this.setAuto,
-    required this.precache, required this.getPrecaching,
+    required this.precache,
+    required this.getPrecaching,
+    required this.setWaiting,
+    required this.getWaiting,
+    required this.refresh,
   }) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    if (shot.url.isNotEmpty && shot.image == null) {
-      if (!getPrecaching().contains(shot.id)) {
-        precache(shot);
+  State<Thumb> createState() => _ThumbState();
+}
+
+class _ThumbState extends State<Thumb> {
+  void gp() async {
+    if (widget.shot.url.isNotEmpty && widget.shot.image == null) {
+      if (!widget.getPrecaching().contains(widget.shot.id)) {
+        widget.precache(widget.shot);
       }
+    } else if (widget.getWaiting() &&
+        (widget.shot.url.isNotEmpty) &&
+        widget.shot.image != null) {
+      await Future.delayed(const Duration(seconds: 6));
+
+      widget.setAuto(true);
+      widget.setWaiting(false);
+      widget.refresh();
     }
+    if (kDebugMode) {
+      print(
+          'building ${widget.shot.id}, ${widget.shot.url} ${widget.shot.image.runtimeType} precaching:${widget.getPrecaching().contains(widget.shot.id)} ${widget.getPrecaching()}');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    gp();
     return IntrinsicHeight(
       child: GestureDetector(
           onTap: () {
-            setAuto(false);
-            launchUrl(Uri.parse(shot.url),
+            widget.setAuto(false);
+            launchUrl(Uri.parse(widget.shot.url),
                 mode: LaunchMode.externalApplication);
           },
-          child: (shot.url.isEmpty || shot.image == null)
+          child: (widget.shot.url.isEmpty || widget.shot.image == null)
               ? GifView.asset('assets/images/loading.gif')
               : FittedBox(
                   fit: BoxFit.contain,
-                  child: shot.image,
+                  child: widget.shot.image,
                 )),
     );
   }
