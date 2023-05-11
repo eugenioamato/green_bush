@@ -11,6 +11,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:wakelock/wakelock.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  Wakelock.enable();
   runApp(const MyApp());
 }
 
@@ -176,7 +178,6 @@ class _MyHomePageState extends State<MyHomePage> {
       range = 50;
       maxThreads = 50;
     }
-    Wakelock.disable();
     super.initState();
   }
 
@@ -195,11 +196,10 @@ class _MyHomePageState extends State<MyHomePage> {
       if (upLimit > len) {
         upLimit = len;
       }
-      for (int ranger = page; ranger < upLimit; ranger++) {
-        pool2.withResource(() => precache(src[ranger]));
-      }
-      if (totalrenders > range && (page - range >= 0)) {
-        removeFromCache(src[(page - range)]);
+      if (i < upLimit && i > (page - 10)) {
+        pool2.withResource(() => precache(src[i]));
+      } else {
+        removeFromCache(src[(i)]);
       }
     }
 
@@ -242,7 +242,7 @@ class _MyHomePageState extends State<MyHomePage> {
       }
       src.clear();
     }
-    Wakelock.enable();
+    Wakelock.disable();
     super.dispose();
   }
 
