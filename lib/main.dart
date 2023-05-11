@@ -268,7 +268,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           getPage: getPage,
                           getAuto: getAuto,
                           setAuto: setAuto,
-                          precache: precache,
+                          precache: poolprecache,
                           getPrecaching: getPrecaching,
                           focusNode: focusNode,
                           carouselController: carouselController,
@@ -612,6 +612,10 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Set<String> precaching = {};
   Set<String> getPrecaching() => precaching;
+
+  void poolprecache(Shot s) {
+    pool2.withResource(() => precache(s));
+  }
 
   void precache(Shot s) {
     if (s.image != null) return;
