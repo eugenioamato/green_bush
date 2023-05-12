@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:green_bush/ui/prompt_widget.dart';
+import 'package:green_bush/ui/settings_page.dart';
 
 class ActionsWidget extends StatefulWidget {
   final TextEditingController controller;
@@ -55,15 +56,16 @@ class _ActionsWidgetState extends State<ActionsWidget> {
                 Expanded(
                     child: IconButton(
                         onPressed: () {
-                          setState(() {
-                            widget.setAuto(!widget.getAuto());
-                          });
-                          widget.refreshCallback();
+                          Navigator.of(context)
+                              .push(MaterialPageRoute(builder: (_) {
+                            return SettingsPage(
+                              getRandomSeed: widget.getRandomSeed,
+                              setRandomSeed: widget.setRandomSeed,
+                            );
+                          }));
                         },
                         icon: Icon(
-                          (widget.getAuto()
-                              ? Icons.play_circle
-                              : Icons.play_circle_outline),
+                          (widget.getAuto() ? Icons.settings : Icons.settings),
                           color: (Colors.green),
                         ))),
                 Expanded(
@@ -81,11 +83,6 @@ class _ActionsWidgetState extends State<ActionsWidget> {
                                 : Colors.orange),
                       )),
                 ),
-                Expanded(
-                    child: Checkbox(
-                  value: widget.getRandomSeed(),
-                  onChanged: (v) => widget.setRandomSeed(v),
-                )),
               ]),
         ),
       ],
