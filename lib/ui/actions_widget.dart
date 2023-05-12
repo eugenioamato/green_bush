@@ -16,6 +16,10 @@ class ActionsWidget extends StatefulWidget {
   final Function isModelEnabled;
   final Function toggleModel;
   final List<String> models;
+  final List<String> samplers;
+  final Function isSamplerEnabled;
+  final Function toggleSampler;
+
   final int maxThreads;
   const ActionsWidget(
       {Key? key,
@@ -32,7 +36,10 @@ class ActionsWidget extends StatefulWidget {
       required this.maxThreads,
       required this.isModelEnabled,
       required this.toggleModel,
-      required this.models})
+      required this.models,
+      required this.samplers,
+      required this.isSamplerEnabled,
+      required this.toggleSampler})
       : super(key: key);
 
   @override
@@ -70,6 +77,9 @@ class _ActionsWidgetState extends State<ActionsWidget> {
                               isModelEnabled: widget.isModelEnabled,
                               toggleModel: widget.toggleModel,
                               models: widget.models,
+                              samplers: widget.samplers,
+                              toggleSampler: widget.toggleSampler,
+                              isSamplerEnabled: widget.isSamplerEnabled,
                             );
                           }));
                         },

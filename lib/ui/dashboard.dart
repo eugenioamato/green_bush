@@ -266,6 +266,9 @@ class _DashboardState extends State<Dashboard> {
                                     models: models,
                                     toggleModel: toggleModel,
                                     isModelEnabled: isModelEnabled,
+                                    samplers: samplers,
+                                    isSamplerEnabled: isSamplerEnabled,
+                                    toggleSampler: toggleSampler,
                                     cfgSliderEValue: cfgSliderEValue,
                                     setCfgSliderEValue: setCfgSliderEValue,
                                     cfgSliderValue: cfgSliderValue,
@@ -338,6 +341,9 @@ class _DashboardState extends State<Dashboard> {
                       isModelEnabled: isModelEnabled,
                       toggleModel: toggleModel,
                       models: models,
+                      samplers: samplers,
+                      isSamplerEnabled: isSamplerEnabled,
+                      toggleSampler: toggleSampler,
                     )),
                 Flexible(
                     child: Align(
@@ -393,6 +399,9 @@ class _DashboardState extends State<Dashboard> {
                     models: models,
                     isModelEnabled: isModelEnabled,
                     toggleModel: toggleModel,
+                    samplers: samplers,
+                    isSamplerEnabled: isSamplerEnabled,
+                    toggleSampler: toggleSampler,
                     cfgSliderEValue: cfgSliderEValue,
                     setCfgSliderEValue: setCfgSliderEValue,
                     cfgSliderValue: cfgSliderValue,
@@ -648,9 +657,28 @@ class _DashboardState extends State<Dashboard> {
 
   final samplers = [
     "DPM++ 2M Karras",
+    "Euler",
     "Euler a",
     "Heun",
   ];
+
+  final selectedSamplers = [
+    true,
+    false,
+    true,
+    true,
+  ];
+
+  bool isSamplerEnabled(s) {
+    if ((s < 0) || (s >= samplers.length)) return false;
+    return selectedSamplers[s];
+  }
+
+  void toggleSampler(s) {
+    if ((s < 0) || (s >= samplers.length)) return;
+    selectedSamplers[s] = !selectedSamplers[s];
+  }
+
   late final Pool pool;
   late final Pool pool2;
 
@@ -679,16 +707,18 @@ class _DashboardState extends State<Dashboard> {
     for (int method = 0; method < selectedModels.length; method++) {
       if (selectedModels[method]) {
         for (int sampler = 0; sampler < samplers.length; sampler++) {
-          for (int cfg = cfgSliderValue.toInt();
-              cfg < cfgSliderEValue + 1;
-              cfg++) {
-            for (int steps = stepSliderValue.toInt();
-                steps < stepSliderEValue + 1;
-                steps += 1) {
-              totalrenders++;
-              pool.withResource(() => _startGeneration(
-                  prompt, nprompt, method, sampler, cfg, steps, seed, apiKey));
-              Future.delayed(const Duration(milliseconds: 50));
+          if (selectedSamplers[sampler]) {
+            for (int cfg = cfgSliderValue.toInt();
+                cfg < cfgSliderEValue + 1;
+                cfg++) {
+              for (int steps = stepSliderValue.toInt();
+                  steps < stepSliderEValue + 1;
+                  steps += 1) {
+                totalrenders++;
+                pool.withResource(() => _startGeneration(prompt, nprompt,
+                    method, sampler, cfg, steps, seed, apiKey));
+                Future.delayed(const Duration(milliseconds: 50));
+              }
             }
           }
         }

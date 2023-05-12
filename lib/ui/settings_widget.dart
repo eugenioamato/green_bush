@@ -11,6 +11,9 @@ class SettingsWidget extends StatefulWidget {
   final Function isModelEnabled;
   final Function toggleModel;
   final List<String> models;
+  final List<String> samplers;
+  final Function isSamplerEnabled;
+  final Function toggleSampler;
   final Function getActiveThreads;
   final Function refreshCallback;
   final Function multispanCallback;
@@ -52,6 +55,9 @@ class SettingsWidget extends StatefulWidget {
     required this.isModelEnabled,
     required this.toggleModel,
     required this.models,
+    required this.samplers,
+    required this.isSamplerEnabled,
+    required this.toggleSampler,
   }) : super(key: key);
 
   @override
@@ -170,6 +176,9 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                   getActiveThreads: widget.getActiveThreads,
                   getRandomSeed: widget.getRandomSeed,
                   setRandomSeed: widget.setRandomSeed,
+                  samplers: widget.samplers,
+                  isSamplerEnabled: widget.isSamplerEnabled,
+                  toggleSampler: widget.toggleSampler,
                 )),
         ],
       ),
