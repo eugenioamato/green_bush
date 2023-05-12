@@ -263,6 +263,9 @@ class _DashboardState extends State<Dashboard> {
                                     setRandomSeed: setRandomSeed,
                                     controller: controller,
                                     controller2: controller2,
+                                    models: models,
+                                    toggleModel: toggleModel,
+                                    isModelEnabled: isModelEnabled,
                                     cfgSliderEValue: cfgSliderEValue,
                                     setCfgSliderEValue: setCfgSliderEValue,
                                     cfgSliderValue: cfgSliderValue,
@@ -332,6 +335,9 @@ class _DashboardState extends State<Dashboard> {
                       setRandomSeed: setRandomSeed,
                       setAuto: setAuto,
                       getAuto: getAuto,
+                      isModelEnabled: isModelEnabled,
+                      toggleModel: toggleModel,
+                      models: models,
                     )),
                 Flexible(
                     child: Align(
@@ -384,6 +390,9 @@ class _DashboardState extends State<Dashboard> {
                     getActiveThreads: getActiveThreads,
                     controller: controller,
                     controller2: controller2,
+                    models: models,
+                    isModelEnabled: isModelEnabled,
+                    toggleModel: toggleModel,
                     cfgSliderEValue: cfgSliderEValue,
                     setCfgSliderEValue: setCfgSliderEValue,
                     cfgSliderValue: cfgSliderValue,
@@ -418,7 +427,7 @@ class _DashboardState extends State<Dashboard> {
     });
 
     final data = <String, dynamic>{
-      "model": methods[method],
+      "model": models[method],
       "prompt": prompt,
       "negative_prompt": nprompt,
       "steps": steps,
@@ -614,7 +623,7 @@ class _DashboardState extends State<Dashboard> {
     s.image = image;
   }
 
-  final allmethods = [
+  final models = [
     "elldreths-vivid-mix.safetensors [342d9d26]", //#shiny
     "deliberate_v2.safetensors [10ec4b29]", // #realistic #errorprone
     "dreamshaper_5BakedVae.safetensors [a3fbf318]", // #art b&w
@@ -622,11 +631,20 @@ class _DashboardState extends State<Dashboard> {
     "lyriel_v15.safetensors [65d547c5]", // #jesus
   ];
 
-  final methods = [
-    "elldreths-vivid-mix.safetensors [342d9d26]",
-    'lyriel_v15.safetensors [65d547c5]',
-    "revAnimated_v122.safetensors [3f4fefd9]",
-  ];
+  var selectedModels = [true, false, false, true, true];
+
+  bool isModelEnabled(n) {
+    if ((n < 0) || (n >= models.length)) {
+      return false;
+    } else {
+      return selectedModels[n];
+    }
+  }
+
+  void toggleModel(n) {
+    if ((n < 0) || (n >= models.length)) return;
+    selectedModels[n] = !selectedModels[n];
+  }
 
   final samplers = [
     "DPM++ 2M Karras",
@@ -658,18 +676,20 @@ class _DashboardState extends State<Dashboard> {
         seed = Random().nextInt(199999999);
       }
     }
-    for (int method = 0; method < methods.length; method++) {
-      for (int sampler = 0; sampler < samplers.length; sampler++) {
-        for (int cfg = cfgSliderValue.toInt();
-            cfg < cfgSliderEValue + 1;
-            cfg++) {
-          for (int steps = stepSliderValue.toInt();
-              steps < stepSliderEValue + 1;
-              steps += 1) {
-            totalrenders++;
-            pool.withResource(() => _startGeneration(
-                prompt, nprompt, method, sampler, cfg, steps, seed, apiKey));
-            Future.delayed(const Duration(milliseconds: 50));
+    for (int method = 0; method < selectedModels.length; method++) {
+      if (selectedModels[method]) {
+        for (int sampler = 0; sampler < samplers.length; sampler++) {
+          for (int cfg = cfgSliderValue.toInt();
+              cfg < cfgSliderEValue + 1;
+              cfg++) {
+            for (int steps = stepSliderValue.toInt();
+                steps < stepSliderEValue + 1;
+                steps += 1) {
+              totalrenders++;
+              pool.withResource(() => _startGeneration(
+                  prompt, nprompt, method, sampler, cfg, steps, seed, apiKey));
+              Future.delayed(const Duration(milliseconds: 50));
+            }
           }
         }
       }

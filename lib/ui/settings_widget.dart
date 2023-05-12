@@ -8,6 +8,9 @@ class SettingsWidget extends StatefulWidget {
   final Orientation orientation;
   final TextEditingController controller;
   final TextEditingController controller2;
+  final Function isModelEnabled;
+  final Function toggleModel;
+  final List<String> models;
   final Function getActiveThreads;
   final Function refreshCallback;
   final Function multispanCallback;
@@ -46,6 +49,9 @@ class SettingsWidget extends StatefulWidget {
     required this.getRandomSeed,
     required this.setRandomSeed,
     required this.maxThreads,
+    required this.isModelEnabled,
+    required this.toggleModel,
+    required this.models,
   }) : super(key: key);
 
   @override
@@ -150,6 +156,9 @@ class _SettingsWidgetState extends State<SettingsWidget> {
             Flexible(
                 flex: 1,
                 child: ActionsWidget(
+                  isModelEnabled: widget.isModelEnabled,
+                  toggleModel: widget.toggleModel,
+                  models: widget.models,
                   maxThreads: widget.maxThreads,
                   controller2: widget.controller2,
                   controller: widget.controller,

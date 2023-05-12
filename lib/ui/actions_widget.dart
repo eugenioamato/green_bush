@@ -13,6 +13,9 @@ class ActionsWidget extends StatefulWidget {
   final Orientation orientation;
   final Function getRandomSeed;
   final Function setRandomSeed;
+  final Function isModelEnabled;
+  final Function toggleModel;
+  final List<String> models;
   final int maxThreads;
   const ActionsWidget(
       {Key? key,
@@ -26,7 +29,10 @@ class ActionsWidget extends StatefulWidget {
       required this.getActiveThreads,
       required this.getRandomSeed,
       required this.setRandomSeed,
-      required this.maxThreads})
+      required this.maxThreads,
+      required this.isModelEnabled,
+      required this.toggleModel,
+      required this.models})
       : super(key: key);
 
   @override
@@ -61,6 +67,9 @@ class _ActionsWidgetState extends State<ActionsWidget> {
                             return SettingsPage(
                               getRandomSeed: widget.getRandomSeed,
                               setRandomSeed: widget.setRandomSeed,
+                              isModelEnabled: widget.isModelEnabled,
+                              toggleModel: widget.toggleModel,
+                              models: widget.models,
                             );
                           }));
                         },
