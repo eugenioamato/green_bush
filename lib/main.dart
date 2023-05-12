@@ -145,6 +145,35 @@ class _MyHomePageState extends State<MyHomePage> {
   CarouselController carouselController = CarouselController();
   int activeThreads = 0;
   int getActiveThreads() => activeThreads;
+  var _pressed = false;
+
+  void manageKeyEvent(KeyEvent event) {
+    if (event.logicalKey.keyId == 32) {
+      if (_pressed) {
+        _pressed = false;
+      } else {
+        setAuto(false);
+        Shot shot = src[getPage()];
+        launchUrl(Uri.parse(shot.url), mode: LaunchMode.externalApplication);
+        _pressed = true;
+      }
+    } else if (event.logicalKey.keyId == 115) {
+      if (_pressed) {
+        _pressed = false;
+      } else {
+        carouselController.nextPage(duration: const Duration(milliseconds: 40));
+        _pressed = true;
+      }
+    } else if (event.logicalKey.keyId == 119) {
+      if (_pressed) {
+        _pressed = false;
+      } else {
+        carouselController.previousPage(
+            duration: const Duration(milliseconds: 40));
+        _pressed = true;
+      }
+    }
+  }
 
   int maxDownloads = 25;
 
@@ -278,6 +307,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           refresh: refresh,
                           setWaiting: setWaiting,
                           getWaiting: getWaiting,
+                          manageKeyEvent: manageKeyEvent,
                         ),
                       ),
                       Align(
@@ -298,23 +328,27 @@ class _MyHomePageState extends State<MyHomePage> {
                           ),
                       Align(
                         alignment: const Alignment(-0.95, 0.95),
-                        child: IconButton(
-                            iconSize: 32,
-                            onPressed: () {
-                              setState(() {
-                                if (getAuto()) {
-                                  setWaiting(false);
-                                }
-                                setAuto(!getAuto());
-                              });
-                            },
-                            icon: Icon(
-                              (getAuto()
-                                  ? Icons.play_circle
-                                  : Icons.play_circle_outline),
-                              //color: (Colors.green),
-                              color: getWaiting() ? Colors.red : Colors.green,
-                            )),
+                        child: KeyboardListener(
+                          onKeyEvent: manageKeyEvent,
+                          focusNode: focusNode,
+                          child: IconButton(
+                              iconSize: 32,
+                              onPressed: () {
+                                setState(() {
+                                  if (getAuto()) {
+                                    setWaiting(false);
+                                  }
+                                  setAuto(!getAuto());
+                                });
+                              },
+                              icon: Icon(
+                                (getAuto()
+                                    ? Icons.play_circle
+                                    : Icons.play_circle_outline),
+                                //color: (Colors.green),
+                                color: getWaiting() ? Colors.red : Colors.green,
+                              )),
+                        ),
                       ),
                       Align(
                         alignment: const Alignment(-0.95, -0.95),
@@ -373,16 +407,20 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                 ),
                 Flexible(
-                  child: Slider(
-                    secondaryTrackValue: getLoading(),
-                    divisions: total,
-                    thumbColor: Colors.green,
-                    inactiveColor: Colors.yellow.withOpacity(0.2),
-                    activeColor: Colors.yellow.withOpacity(0.2),
-                    value: getPage().toDouble() / total,
-                    onChanged: (double value) {
-                      carouselController.jumpToPage((value * total).toInt());
-                    },
+                  child: KeyboardListener(
+                    onKeyEvent: manageKeyEvent,
+                    focusNode: focusNode,
+                    child: Slider(
+                      secondaryTrackValue: getLoading(),
+                      divisions: total,
+                      thumbColor: Colors.green,
+                      inactiveColor: Colors.yellow.withOpacity(0.2),
+                      activeColor: Colors.yellow.withOpacity(0.2),
+                      value: getPage().toDouble() / total,
+                      onChanged: (double value) {
+                        carouselController.jumpToPage((value * total).toInt());
+                      },
+                    ),
                   ),
                 ),
               ],
@@ -443,6 +481,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     getWaiting: getWaiting,
                     setWaiting: setWaiting,
                     refresh: refresh,
+                    manageKeyEvent: manageKeyEvent,
                   ),
                 ),
                 Expanded(
@@ -991,7 +1030,9 @@ class _ActionsWidgetState extends State<ActionsWidget> {
                         ))),
                 Expanded(
                   child: IconButton(
-                      onPressed: () => widget.multispanCallback(),
+                      onPressed: () {
+                        widget.multispanCallback();
+                      },
                       icon: Icon(
                         Icons.generating_tokens,
                         color: (widget.getActiveThreads() == 0
@@ -1022,6 +1063,7 @@ class CarouselWidget extends StatefulWidget {
   final Function getAuto;
   final Function precache;
   final Function getPrecaching;
+  final void Function(KeyEvent) manageKeyEvent;
 
   final Function setWaiting;
   final Function getWaiting;
@@ -1041,7 +1083,8 @@ class CarouselWidget extends StatefulWidget {
       required this.getPrecaching,
       required this.setWaiting,
       required this.getWaiting,
-      required this.refresh})
+      required this.refresh,
+      required this.manageKeyEvent})
       : super(key: key);
 
   @override
@@ -1049,33 +1092,12 @@ class CarouselWidget extends StatefulWidget {
 }
 
 class _CarouselWidgetState extends State<CarouselWidget> {
-  bool _pressed = false;
-
   @override
   Widget build(BuildContext context) {
     return KeyboardListener(
       focusNode: widget.focusNode,
       autofocus: true,
-      onKeyEvent: (event) {
-        if (event.logicalKey.keyId == 32) {
-        } else if (event.logicalKey.keyId == 115) {
-          if (_pressed) {
-            _pressed = false;
-          } else {
-            widget.carouselController
-                .nextPage(duration: const Duration(milliseconds: 40));
-            _pressed = true;
-          }
-        } else if (event.logicalKey.keyId == 119) {
-          if (_pressed) {
-            _pressed = false;
-          } else {
-            widget.carouselController
-                .previousPage(duration: const Duration(milliseconds: 40));
-            _pressed = true;
-          }
-        }
-      },
+      onKeyEvent: widget.manageKeyEvent,
       child: IntrinsicHeight(
         child: CarouselSlider(
           items: widget.src
