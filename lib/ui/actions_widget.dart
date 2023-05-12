@@ -19,6 +19,8 @@ class ActionsWidget extends StatefulWidget {
   final List<String> samplers;
   final Function isSamplerEnabled;
   final Function toggleSampler;
+  final Function getAutoDuration;
+  final Function setAutoDuration;
 
   final int maxThreads;
   const ActionsWidget(
@@ -39,7 +41,9 @@ class ActionsWidget extends StatefulWidget {
       required this.models,
       required this.samplers,
       required this.isSamplerEnabled,
-      required this.toggleSampler})
+      required this.toggleSampler,
+      required this.getAutoDuration,
+      required this.setAutoDuration})
       : super(key: key);
 
   @override
@@ -80,6 +84,8 @@ class _ActionsWidgetState extends State<ActionsWidget> {
                               samplers: widget.samplers,
                               toggleSampler: widget.toggleSampler,
                               isSamplerEnabled: widget.isSamplerEnabled,
+                              getAutoDuration: widget.getAutoDuration,
+                              setAutoDuration: widget.setAutoDuration,
                             );
                           }));
                         },

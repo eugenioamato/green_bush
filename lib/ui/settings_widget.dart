@@ -29,6 +29,8 @@ class SettingsWidget extends StatefulWidget {
   final Function getAuto;
   final Function getRandomSeed;
   final Function setRandomSeed;
+  final Function getAutoDuration;
+  final Function setAutoDuration;
 
   const SettingsWidget({
     Key? key,
@@ -58,6 +60,8 @@ class SettingsWidget extends StatefulWidget {
     required this.samplers,
     required this.isSamplerEnabled,
     required this.toggleSampler,
+    required this.getAutoDuration,
+    required this.setAutoDuration,
   }) : super(key: key);
 
   @override
@@ -179,6 +183,8 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                   samplers: widget.samplers,
                   isSamplerEnabled: widget.isSamplerEnabled,
                   toggleSampler: widget.toggleSampler,
+                  getAutoDuration: widget.getAutoDuration,
+                  setAutoDuration: widget.setAutoDuration,
                 )),
         ],
       ),

@@ -9,6 +9,8 @@ class SettingsPage extends StatefulWidget {
   final List<String> samplers;
   final Function isSamplerEnabled;
   final Function toggleSampler;
+  final Function getAutoDuration;
+  final Function setAutoDuration;
 
   const SettingsPage(
       {Key? key,
@@ -19,7 +21,9 @@ class SettingsPage extends StatefulWidget {
       required this.models,
       required this.samplers,
       required this.isSamplerEnabled,
-      required this.toggleSampler})
+      required this.toggleSampler,
+      required this.getAutoDuration,
+      required this.setAutoDuration})
       : super(key: key);
 
   @override
@@ -44,6 +48,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final mbit = 5200 / widget.getAutoDuration();
     return Scaffold(
       backgroundColor: Colors.black,
       body: Flex(
@@ -67,6 +72,25 @@ class _SettingsPageState extends State<SettingsPage> {
                           widget.setRandomSeed(v);
                         }),
                       ),
+                    ],
+                  ),
+                ),
+                Card(
+                  color: Colors.black,
+                  child: Column(
+                    children: [
+                      Text(
+                          'Autoplay duration (msec): ${widget.getAutoDuration()} at ${mbit.toStringAsFixed(2)} MBIT'),
+                      Slider.adaptive(
+                          divisions: 59950,
+                          min: 50,
+                          max: 60000,
+                          value: widget.getAutoDuration().toDouble(),
+                          onChanged: (v) {
+                            setState(() {
+                              widget.setAutoDuration(v.toInt());
+                            });
+                          })
                     ],
                   ),
                 ),
@@ -131,7 +155,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           Flexible(
               child: IconButton(
-            icon: const Icon(Icons.save),
+            icon: const Icon(Icons.arrow_back),
             onPressed: () {
               Navigator.of(context).pop(checkModels.values);
             },

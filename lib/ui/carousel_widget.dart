@@ -11,6 +11,7 @@ class CarouselWidget extends StatefulWidget {
   final Function getAuto;
   final Function precache;
   final Function getPrecaching;
+  final Function getAutoDuration;
   final void Function(KeyEvent) manageKeyEvent;
 
   final Function setWaiting;
@@ -32,7 +33,8 @@ class CarouselWidget extends StatefulWidget {
       required this.setWaiting,
       required this.getWaiting,
       required this.refresh,
-      required this.manageKeyEvent})
+      required this.manageKeyEvent,
+      required this.getAutoDuration})
       : super(key: key);
 
   @override
@@ -70,7 +72,7 @@ class _CarouselWidgetState extends State<CarouselWidget> {
             autoPlayAnimationDuration: const Duration(milliseconds: 1),
             scrollDirection: Axis.vertical,
             enableInfiniteScroll: false,
-            autoPlayInterval: const Duration(milliseconds: 800),
+            autoPlayInterval: Duration(milliseconds: widget.getAutoDuration()),
             viewportFraction: 1.0,
           ),
         ),

@@ -28,6 +28,7 @@ class _DashboardState extends State<Dashboard> {
   TextEditingController controller2 = TextEditingController()
     ..text = "cartoon, blur";
   CarouselController carouselController = CarouselController();
+
   int activeThreads = 0;
   int getActiveThreads() => activeThreads;
   var _pressed = false;
@@ -80,6 +81,7 @@ class _DashboardState extends State<Dashboard> {
   double getLoading() => _loading;
   void setLoading(double rate) => _loading = rate;
   late final String apiKey;
+
   @override
   void initState() {
     apiKey = const String.fromEnvironment('API_KEY');
@@ -93,6 +95,13 @@ class _DashboardState extends State<Dashboard> {
       maxThreads = 50;
     }
     super.initState();
+  }
+
+  int _autoDuration = 800;
+  int getAutoDuration() => _autoDuration;
+  void setAutoDuration(n) {
+    if (n < 0 || n > 100000) return;
+    _autoDuration = n;
   }
 
   int totalrenders = 0;
@@ -193,6 +202,7 @@ class _DashboardState extends State<Dashboard> {
                           setWaiting: setWaiting,
                           getWaiting: getWaiting,
                           manageKeyEvent: manageKeyEvent,
+                          getAutoDuration: getAutoDuration,
                         ),
                       ),
                       Align(
@@ -228,8 +238,8 @@ class _DashboardState extends State<Dashboard> {
                               },
                               icon: Icon(
                                 (getAuto()
-                                    ? Icons.play_circle
-                                    : Icons.play_circle_outline),
+                                    ? Icons.pause_circle_outline
+                                    : Icons.play_circle),
                                 //color: (Colors.green),
                                 color: getWaiting() ? Colors.red : Colors.green,
                               )),
@@ -259,6 +269,8 @@ class _DashboardState extends State<Dashboard> {
                                     refreshCallback: () {
                                       setState(() {});
                                     },
+                                    getAutoDuration: getAutoDuration,
+                                    setAutoDuration: setAutoDuration,
                                     getRandomSeed: getRandomSeed,
                                     setRandomSeed: setRandomSeed,
                                     controller: controller,
@@ -334,6 +346,8 @@ class _DashboardState extends State<Dashboard> {
                       refreshCallback: () {
                         setState(() {});
                       },
+                      getAutoDuration: getAutoDuration,
+                      setAutoDuration: setAutoDuration,
                       getRandomSeed: getRandomSeed,
                       setRandomSeed: setRandomSeed,
                       setAuto: setAuto,
@@ -381,6 +395,7 @@ class _DashboardState extends State<Dashboard> {
                     setWaiting: setWaiting,
                     refresh: refresh,
                     manageKeyEvent: manageKeyEvent,
+                    getAutoDuration: getAutoDuration,
                   ),
                 ),
                 Expanded(
@@ -391,6 +406,8 @@ class _DashboardState extends State<Dashboard> {
                     refreshCallback: () {
                       setState(() {});
                     },
+                    getAutoDuration: getAutoDuration,
+                    setAutoDuration: setAutoDuration,
                     getRandomSeed: getRandomSeed,
                     setRandomSeed: setRandomSeed,
                     getActiveThreads: getActiveThreads,
