@@ -687,6 +687,14 @@ class _MyHomePageState extends State<MyHomePage> {
     s.image = image;
   }
 
+  final allmethods = [
+    "elldreths-vivid-mix.safetensors [342d9d26]", //#shiny
+    "deliberate_v2.safetensors [10ec4b29]", // #realistic #errorprone
+    "dreamshaper_5BakedVae.safetensors [a3fbf318]", // #art b&w
+    "revAnimated_v122.safetensors [3f4fefd9]", // #plastic
+    "lyriel_v15.safetensors [65d547c5]", // #jesus
+  ];
+
   final methods = [
     "elldreths-vivid-mix.safetensors [342d9d26]",
     'lyriel_v15.safetensors [65d547c5]',
