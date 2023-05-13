@@ -12,7 +12,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:wakelock/wakelock.dart';
-import 'package:window_manager/window_manager.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key, required this.title});
@@ -22,34 +21,7 @@ class Dashboard extends StatefulWidget {
   State<Dashboard> createState() => _DashboardState();
 }
 
-class _DashboardState extends State<Dashboard> with WindowListener {
-  @override
-  void onWindowEvent(String eventName) {
-    if (kDebugMode) {
-      print('[WindowManager] onWindowEvent: $eventName');
-    }
-  }
-
-  @override
-  void onWindowClose() {
-    for (var s in src) {
-      removeFromCache(s);
-      s.image = null;
-    }
-    src.clear();
-  }
-
-  @override
-  void onWindowFocus() {
-    focusNode.requestFocus(focusNode);
-  }
-
-  @override
-  void onWindowMinimize() {
-    setAuto(false);
-    // do something
-  }
-
+class _DashboardState extends State<Dashboard> {
   int maxThreads = 50;
   TextEditingController controller = TextEditingController()
     ..text = "young Lindsay And Sidney Greenbush";
@@ -148,7 +120,6 @@ class _DashboardState extends State<Dashboard> with WindowListener {
       setRange(50);
       maxThreads = 50;
     }
-    windowManager.addListener(this);
     super.initState();
   }
 
@@ -229,7 +200,6 @@ class _DashboardState extends State<Dashboard> with WindowListener {
       src.clear();
     }
     Wakelock.disable();
-    windowManager.removeListener(this);
     super.dispose();
   }
 
