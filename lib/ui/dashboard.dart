@@ -12,6 +12,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:wakelock/wakelock.dart';
+import 'package:window_manager/window_manager.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key, required this.title});
@@ -21,7 +22,34 @@ class Dashboard extends StatefulWidget {
   State<Dashboard> createState() => _DashboardState();
 }
 
-class _DashboardState extends State<Dashboard> {
+class _DashboardState extends State<Dashboard> with WindowListener {
+  @override
+  void onWindowEvent(String eventName) {
+    if (kDebugMode) {
+      print('[WindowManager] onWindowEvent: $eventName');
+    }
+  }
+
+  @override
+  void onWindowClose() {
+    for (var s in src) {
+      removeFromCache(s);
+      s.image = null;
+    }
+    src.clear();
+  }
+
+  @override
+  void onWindowFocus() {
+    focusNode.requestFocus(focusNode);
+  }
+
+  @override
+  void onWindowMinimize() {
+    setAuto(false);
+    // do something
+  }
+
   int maxThreads = 50;
   TextEditingController controller = TextEditingController()
     ..text = "young Lindsay And Sidney Greenbush";
@@ -114,6 +142,7 @@ class _DashboardState extends State<Dashboard> {
       setRange(50);
       maxThreads = 50;
     }
+    windowManager.addListener(this);
     super.initState();
   }
 
@@ -204,6 +233,7 @@ class _DashboardState extends State<Dashboard> {
       src.clear();
     }
     Wakelock.disable();
+    windowManager.removeListener(this);
     super.dispose();
   }
 
@@ -507,8 +537,8 @@ class _DashboardState extends State<Dashboard> {
 
   Dio dio = Dio();
 
-  void _startGeneration(
-      prompt, nprompt, method, sampler, cfg, steps, seed, upscale, apiKey) async {
+  void _startGeneration(prompt, nprompt, method, sampler, cfg, steps, seed,
+      upscale, apiKey) async {
     if (kDebugMode) {
       print('starting from ${controller.text}');
     }
@@ -786,7 +816,7 @@ class _DashboardState extends State<Dashboard> {
       }
     }
 
-    final upscale=getUpscale();
+    final upscale = getUpscale();
 
     for (int method = 0; method < selectedModels.length; method++) {
       if (selectedModels[method]) {
