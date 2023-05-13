@@ -719,9 +719,15 @@ class _DashboardState extends State<Dashboard> {
     "dreamshaper_5BakedVae.safetensors [a3fbf318]", // #art b&w
     "revAnimated_v122.safetensors [3f4fefd9]", // #plastic
     "lyriel_v15.safetensors [65d547c5]", // #jesus
+    "Realistic_Vision_V2.0.safetensors [79587710]",
+    "timeless-1.0.ckpt [7c4971d4]",
+    "portrait+1.0.safetensors [1400e684]",
+    "openjourney_V4.ckpt [ca2f377f]",
+    "theallys-mix-ii-churned.safetensors [5d9225a4]",
+    "analog-diffusion-1.0.ckpt [9ca13f02]",
   ];
 
-  var selectedModels = [true, false, false, true, true];
+  var selectedModels = [true, false, false, true, true, false, false, false, false,false, false];
 
   bool isModelEnabled(n) {
     if ((n < 0) || (n >= models.length)) {
