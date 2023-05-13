@@ -13,6 +13,8 @@ class SettingsPage extends StatefulWidget {
   final Function setAutoDuration;
   final Function getRange;
   final Function setRange;
+  final Function getUpscale;
+  final Function setUpscale;
 
   const SettingsPage(
       {Key? key,
@@ -27,7 +29,9 @@ class SettingsPage extends StatefulWidget {
       required this.getAutoDuration,
       required this.setAutoDuration,
       required this.getRange,
-      required this.setRange})
+      required this.setRange,
+      required this.getUpscale,
+      required this.setUpscale})
       : super(key: key);
 
   @override
@@ -74,6 +78,20 @@ class _SettingsPageState extends State<SettingsPage> {
                         value: widget.getRandomSeed(),
                         onChanged: (v) => setState(() {
                           widget.setRandomSeed(v);
+                        }),
+                      ),
+                    ],
+                  ),
+                ),
+                Card(
+                  color: Colors.black,
+                  child: Column(
+                    children: [
+                      const Text('Upscale images'),
+                      Checkbox(
+                        value: widget.getUpscale(),
+                        onChanged: (v) => setState(() {
+                          widget.setUpscale(v);
                         }),
                       ),
                     ],

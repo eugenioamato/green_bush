@@ -36,7 +36,6 @@ class _DashboardState extends State<Dashboard> {
   void manageKeyEvent(KeyEvent event) {
     if (event.logicalKey.keyId == 32) {
       setAuto(false);
-      setWaiting(false);
       Shot shot = src[getPage()];
       launchUrl(Uri.parse(shot.url), mode: LaunchMode.externalApplication);
     } else if (event.logicalKey.keyId == 115) {
@@ -81,13 +80,15 @@ class _DashboardState extends State<Dashboard> {
         _randomSeed = v;
       });
 
+  bool _upscale = false;
+  bool getUpscale() => _upscale;
+  void setUpscale(n) {
+    _upscale = n;
+  }
+
   bool _auto = false;
   bool getAuto() => _auto;
   void setAuto(v) => _auto = v;
-
-  bool _waiting = false;
-  bool getWaiting() => _waiting;
-  void setWaiting(v) => _waiting = v;
 
   double _loading = 0.0;
   double getLoading() => _loading;
@@ -167,7 +168,6 @@ class _DashboardState extends State<Dashboard> {
     updateSecondarySlider();
     if (src[page].image == null) {
       if (getAuto()) {
-        setWaiting(true);
         setAuto(false);
       }
     }
@@ -214,6 +214,9 @@ class _DashboardState extends State<Dashboard> {
         resizeToAvoidBottomInset: false,
         backgroundColor: Colors.black,
         body: OrientationBuilder(builder: (context, orientation) {
+          if (kDebugMode) {
+            print('rebuilding dash');
+          }
           final total = (src.length) < 2 ? 1 : (src.length) - 1;
           final totalThreads = getActiveThreads();
           if (orientation == Orientation.landscape) {
@@ -237,8 +240,6 @@ class _DashboardState extends State<Dashboard> {
                           focusNode: focusNode,
                           carouselController: carouselController,
                           refresh: refresh,
-                          setWaiting: setWaiting,
-                          getWaiting: getWaiting,
                           manageKeyEvent: manageKeyEvent,
                           getAutoDuration: getAutoDuration,
                         ),
@@ -259,7 +260,7 @@ class _DashboardState extends State<Dashboard> {
                           child: Text('$totalThreads/$maxThreads/$maxDownloads')
                           //color: (Colors.green),
                           ),
-                      src.length > 0
+                      src.isNotEmpty
                           ? Align(
                               alignment: const Alignment(0, 0.90),
                               child: Text(
@@ -278,9 +279,6 @@ class _DashboardState extends State<Dashboard> {
                               iconSize: 32,
                               onPressed: () {
                                 setState(() {
-                                  if (getAuto()) {
-                                    setWaiting(false);
-                                  }
                                   setAuto(!getAuto());
                                 });
                               },
@@ -289,7 +287,7 @@ class _DashboardState extends State<Dashboard> {
                                     ? Icons.pause_circle_outline
                                     : Icons.play_circle),
                                 //color: (Colors.green),
-                                color: getWaiting() ? Colors.red : Colors.green,
+                                color: Colors.green,
                               )),
                         ),
                       ),
@@ -311,6 +309,8 @@ class _DashboardState extends State<Dashboard> {
                                 child: Card(
                                   color: Colors.black,
                                   child: SettingsWidget(
+                                    getUpscale: getUpscale,
+                                    setUpscale: setUpscale,
                                     showActions: true,
                                     orientation: orientation,
                                     getActiveThreads: getActiveThreads,
@@ -377,6 +377,7 @@ class _DashboardState extends State<Dashboard> {
                       },
                       onChangeEnd: (newPage) {
                         setDisableCaching(false);
+                        setPage(getPage());
                       },
                       onChanged: (double value) {
                         carouselController.jumpToPage((value * total).toInt());
@@ -403,6 +404,8 @@ class _DashboardState extends State<Dashboard> {
                       refreshCallback: () {
                         setState(() {});
                       },
+                      getUpscale: getUpscale,
+                      setUpscale: setUpscale,
                       getRange: getRange,
                       setRange: setRange,
                       getAutoDuration: getAutoDuration,
@@ -450,8 +453,6 @@ class _DashboardState extends State<Dashboard> {
                     getPrecaching: getPrecaching,
                     focusNode: focusNode,
                     carouselController: carouselController,
-                    getWaiting: getWaiting,
-                    setWaiting: setWaiting,
                     refresh: refresh,
                     manageKeyEvent: manageKeyEvent,
                     getAutoDuration: getAutoDuration,
@@ -465,6 +466,8 @@ class _DashboardState extends State<Dashboard> {
                     refreshCallback: () {
                       setState(() {});
                     },
+                    getUpscale: getUpscale,
+                    setUpscale: setUpscale,
                     getRange: getRange,
                     setRange: setRange,
                     getAutoDuration: getAutoDuration,
@@ -505,7 +508,7 @@ class _DashboardState extends State<Dashboard> {
   Dio dio = Dio();
 
   void _startGeneration(
-      prompt, nprompt, method, sampler, cfg, steps, seed, apiKey) async {
+      prompt, nprompt, method, sampler, cfg, steps, seed, upscale, apiKey) async {
     if (kDebugMode) {
       print('starting from ${controller.text}');
     }
@@ -522,7 +525,7 @@ class _DashboardState extends State<Dashboard> {
       "sampler": samplers[sampler],
       "aspect_ratio": "landscape",
       "seed": seed,
-      "upscale": false,
+      "upscale": upscale,
     };
     final str = jsonEncode(data);
 
@@ -644,11 +647,19 @@ class _DashboardState extends State<Dashboard> {
   }
 
   void precache(Shot s) {
-    if (getDisableCaching()) return;
     if (precaching.length > maxDownloads) return;
     if (s.image != null) return;
     final url = s.url;
     if (url.isEmpty) return;
+    if (getDisableCaching()) {
+      if (kDebugMode) {
+        print('disabled precaching, stopped ${s.id}');
+      }
+      return;
+    }
+
+    if ((getPrecaching().contains(s.id))) return;
+
     getPrecaching().add(s.id);
     if (kDebugMode) {
       print('starting precache ${s.id}');
@@ -673,28 +684,19 @@ class _DashboardState extends State<Dashboard> {
       image.image
           .resolve(const ImageConfiguration())
           .addListener(ImageStreamListener((_, __) {
-            //final bytes = PaintingBinding.instance.imageCache.currentSizeBytes;
-            //final maxbytes = PaintingBinding.instance.imageCache.maximumSizeBytes;
-            //if (kDebugMode) {
-            //  print(':: $bytes / $maxbytes');
-            //}
+            if (kDebugMode) {
+              final bytes =
+                  PaintingBinding.instance.imageCache.currentSizeBytes;
+              final maxbytes =
+                  PaintingBinding.instance.imageCache.maximumSizeBytes;
+
+              print(':: $bytes / $maxbytes');
+            }
             getPrecaching().remove(s.id);
             if (kDebugMode) {
               print('ending    precache ${s.id} ${getPrecaching()} }');
             }
-            int index = -1;
-            for (int i = 0; i < src.length; i++) {
-              if (src[i].id == s.id) {
-                index = i;
-                break;
-              }
-            }
             updateSecondarySlider();
-            if (getPage() == index) {
-              if (mounted) {
-                setState(() {});
-              }
-            }
           }, onError: (e, stack) {
             if (kDebugMode) {
               print('error on listener $e $stack');
@@ -764,7 +766,6 @@ class _DashboardState extends State<Dashboard> {
 
   void _multiSpan() {
     setAuto(false);
-    setWaiting(false);
     carouselController.jumpToPage(0);
     focusNode.requestFocus();
     for (var s in src) {
@@ -784,6 +785,9 @@ class _DashboardState extends State<Dashboard> {
         seed = Random().nextInt(199999999);
       }
     }
+
+    final upscale=getUpscale();
+
     for (int method = 0; method < selectedModels.length; method++) {
       if (selectedModels[method]) {
         for (int sampler = 0; sampler < samplers.length; sampler++) {
@@ -796,7 +800,7 @@ class _DashboardState extends State<Dashboard> {
                   steps += 1) {
                 totalrenders++;
                 pool.withResource(() => _startGeneration(prompt, nprompt,
-                    method, sampler, cfg, steps, seed, apiKey));
+                    method, sampler, cfg, steps, seed, upscale, apiKey));
                 Future.delayed(const Duration(milliseconds: 50));
               }
             }
@@ -813,6 +817,9 @@ class _DashboardState extends State<Dashboard> {
       k++;
     }
     setLoading(k / src.length);
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   refresh() {

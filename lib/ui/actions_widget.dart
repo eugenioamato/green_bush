@@ -23,6 +23,8 @@ class ActionsWidget extends StatefulWidget {
   final Function setAutoDuration;
   final Function getRange;
   final Function setRange;
+  final Function getUpscale;
+  final Function setUpscale;
 
   final int maxThreads;
   const ActionsWidget(
@@ -47,7 +49,9 @@ class ActionsWidget extends StatefulWidget {
       required this.getAutoDuration,
       required this.setAutoDuration,
       required this.getRange,
-      required this.setRange})
+      required this.setRange,
+      required this.getUpscale,
+      required this.setUpscale})
       : super(key: key);
 
   @override
@@ -93,6 +97,8 @@ class _ActionsWidgetState extends State<ActionsWidget> {
                               setAutoDuration: widget.setAutoDuration,
                               getRange: widget.getRange,
                               setRange: widget.setRange,
+                              getUpscale: widget.getUpscale,
+                              setUpscale: widget.setUpscale,
                             );
                           }));
                         },

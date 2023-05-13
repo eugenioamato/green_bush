@@ -13,9 +13,6 @@ class CarouselWidget extends StatefulWidget {
   final Function getPrecaching;
   final Function getAutoDuration;
   final void Function(KeyEvent) manageKeyEvent;
-
-  final Function setWaiting;
-  final Function getWaiting;
   final Function refresh;
 
   final Function setAuto;
@@ -30,8 +27,6 @@ class CarouselWidget extends StatefulWidget {
       required this.setAuto,
       required this.precache,
       required this.getPrecaching,
-      required this.setWaiting,
-      required this.getWaiting,
       required this.refresh,
       required this.manageKeyEvent,
       required this.getAutoDuration})
@@ -56,9 +51,7 @@ class _CarouselWidgetState extends State<CarouselWidget> {
                     setAuto: widget.setAuto,
                     precache: widget.precache,
                     getPrecaching: widget.getPrecaching,
-                    getWaiting: widget.getWaiting,
                     refresh: widget.refresh,
-                    setWaiting: widget.setWaiting,
                   ))
               .toList(),
           carouselController: widget.carouselController,

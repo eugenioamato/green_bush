@@ -9,8 +9,6 @@ class Thumb extends StatefulWidget {
   final Function setAuto;
   final Function precache;
   final Function getPrecaching;
-  final Function setWaiting;
-  final Function getWaiting;
   final Function refresh;
 
   const Thumb({
@@ -19,8 +17,6 @@ class Thumb extends StatefulWidget {
     required this.setAuto,
     required this.precache,
     required this.getPrecaching,
-    required this.setWaiting,
-    required this.getWaiting,
     required this.refresh,
   }) : super(key: key);
 
@@ -34,14 +30,6 @@ class _ThumbState extends State<Thumb> {
       if (!widget.getPrecaching().contains(widget.shot.id)) {
         widget.precache(widget.shot);
       }
-    } else if (widget.getWaiting() &&
-        (widget.shot.url.isNotEmpty) &&
-        widget.shot.image != null) {
-      await Future.delayed(const Duration(seconds: 6));
-
-      widget.setAuto(true);
-      widget.setWaiting(false);
-      widget.refresh();
     }
     if (kDebugMode) {
       print(

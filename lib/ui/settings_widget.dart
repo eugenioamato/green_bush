@@ -33,6 +33,8 @@ class SettingsWidget extends StatefulWidget {
   final Function setAutoDuration;
   final Function getRange;
   final Function setRange;
+  final Function getUpscale;
+  final Function setUpscale;
 
   const SettingsWidget({
     Key? key,
@@ -66,6 +68,8 @@ class SettingsWidget extends StatefulWidget {
     required this.setAutoDuration,
     required this.getRange,
     required this.setRange,
+    required this.getUpscale,
+    required this.setUpscale,
   }) : super(key: key);
 
   @override
@@ -170,6 +174,8 @@ class _SettingsWidgetState extends State<SettingsWidget> {
             Flexible(
                 flex: 1,
                 child: ActionsWidget(
+                  getUpscale: widget.getUpscale,
+                  setUpscale: widget.setUpscale,
                   isModelEnabled: widget.isModelEnabled,
                   toggleModel: widget.toggleModel,
                   models: widget.models,
