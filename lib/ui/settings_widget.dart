@@ -31,6 +31,8 @@ class SettingsWidget extends StatefulWidget {
   final Function setRandomSeed;
   final Function getAutoDuration;
   final Function setAutoDuration;
+  final Function getRange;
+  final Function setRange;
 
   const SettingsWidget({
     Key? key,
@@ -62,6 +64,8 @@ class SettingsWidget extends StatefulWidget {
     required this.toggleSampler,
     required this.getAutoDuration,
     required this.setAutoDuration,
+    required this.getRange,
+    required this.setRange,
   }) : super(key: key);
 
   @override
@@ -172,6 +176,8 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                   maxThreads: widget.maxThreads,
                   controller2: widget.controller2,
                   controller: widget.controller,
+                  getRange: widget.getRange,
+                  setRange: widget.setRange,
                   orientation: widget.orientation,
                   multispanCallback: widget.multispanCallback,
                   refreshCallback: widget.refreshCallback,

@@ -21,6 +21,8 @@ class ActionsWidget extends StatefulWidget {
   final Function toggleSampler;
   final Function getAutoDuration;
   final Function setAutoDuration;
+  final Function getRange;
+  final Function setRange;
 
   final int maxThreads;
   const ActionsWidget(
@@ -43,7 +45,9 @@ class ActionsWidget extends StatefulWidget {
       required this.isSamplerEnabled,
       required this.toggleSampler,
       required this.getAutoDuration,
-      required this.setAutoDuration})
+      required this.setAutoDuration,
+      required this.getRange,
+      required this.setRange})
       : super(key: key);
 
   @override
@@ -73,6 +77,7 @@ class _ActionsWidgetState extends State<ActionsWidget> {
                 Expanded(
                     child: IconButton(
                         onPressed: () {
+                          widget.setAuto(false);
                           Navigator.of(context)
                               .push(MaterialPageRoute(builder: (_) {
                             return SettingsPage(
@@ -86,6 +91,8 @@ class _ActionsWidgetState extends State<ActionsWidget> {
                               isSamplerEnabled: widget.isSamplerEnabled,
                               getAutoDuration: widget.getAutoDuration,
                               setAutoDuration: widget.setAutoDuration,
+                              getRange: widget.getRange,
+                              setRange: widget.setRange,
                             );
                           }));
                         },

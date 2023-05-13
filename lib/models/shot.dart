@@ -4,7 +4,6 @@ class Shot implements Comparable<Shot> {
   Shot(this.id, this.url, this.prompt, this.nprompt, this.cfg, this.steps,
       this.seed, this.method, this.sampler, this.image);
 
-  String get label => '$seed $method > $sampler $cfg $steps';
   final String id;
   final String prompt;
   final String nprompt;

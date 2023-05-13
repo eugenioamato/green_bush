@@ -11,6 +11,8 @@ class SettingsPage extends StatefulWidget {
   final Function toggleSampler;
   final Function getAutoDuration;
   final Function setAutoDuration;
+  final Function getRange;
+  final Function setRange;
 
   const SettingsPage(
       {Key? key,
@@ -23,7 +25,9 @@ class SettingsPage extends StatefulWidget {
       required this.isSamplerEnabled,
       required this.toggleSampler,
       required this.getAutoDuration,
-      required this.setAutoDuration})
+      required this.setAutoDuration,
+      required this.getRange,
+      required this.setRange})
       : super(key: key);
 
   @override
@@ -89,6 +93,24 @@ class _SettingsPageState extends State<SettingsPage> {
                           onChanged: (v) {
                             setState(() {
                               widget.setAutoDuration(v.toInt());
+                            });
+                          })
+                    ],
+                  ),
+                ),
+                Card(
+                  color: Colors.black,
+                  child: Column(
+                    children: [
+                      Text('Cache range: ${widget.getRange()}'),
+                      Slider.adaptive(
+                          min: 1,
+                          max: 10000,
+                          divisions: 10000,
+                          value: widget.getRange().toDouble(),
+                          onChanged: (r) {
+                            setState(() {
+                              widget.setRange(r.toInt());
                             });
                           })
                     ],

@@ -35,14 +35,10 @@ class _DashboardState extends State<Dashboard> {
 
   void manageKeyEvent(KeyEvent event) {
     if (event.logicalKey.keyId == 32) {
-      if (_pressed) {
-        _pressed = false;
-      } else {
-        setAuto(false);
-        Shot shot = src[getPage()];
-        launchUrl(Uri.parse(shot.url), mode: LaunchMode.externalApplication);
-        _pressed = true;
-      }
+      setAuto(false);
+      setWaiting(false);
+      Shot shot = src[getPage()];
+      launchUrl(Uri.parse(shot.url), mode: LaunchMode.externalApplication);
     } else if (event.logicalKey.keyId == 115) {
       if (_pressed) {
         _pressed = false;
@@ -56,6 +52,22 @@ class _DashboardState extends State<Dashboard> {
       } else {
         carouselController.previousPage(
             duration: const Duration(milliseconds: 40));
+        _pressed = true;
+      }
+    } else if (event.logicalKey.keyId == 100) {
+      if (_pressed) {
+        _pressed = false;
+      } else {
+        setState(() {
+          setAuto(!getAuto());
+        });
+        _pressed = true;
+      }
+    } else if (event.logicalKey.keyId == 97) {
+      if (_pressed) {
+        _pressed = false;
+      } else {
+        carouselController.jumpToPage(0);
         _pressed = true;
       }
     }
@@ -82,6 +94,13 @@ class _DashboardState extends State<Dashboard> {
   void setLoading(double rate) => _loading = rate;
   late final String apiKey;
 
+  bool _disableCaching = false;
+  void setDisableCaching(v) {
+    _disableCaching = v;
+  }
+
+  bool getDisableCaching() => _disableCaching;
+
   @override
   void initState() {
     apiKey = const String.fromEnvironment('API_KEY');
@@ -91,7 +110,7 @@ class _DashboardState extends State<Dashboard> {
     pool = Pool(maxThreads, timeout: const Duration(seconds: 21));
     pool2 = Pool(maxDownloads, timeout: const Duration(seconds: 16));
     if (Platform.isWindows || Platform.isMacOS) {
-      range = 50;
+      setRange(50);
       maxThreads = 50;
     }
     super.initState();
@@ -105,7 +124,13 @@ class _DashboardState extends State<Dashboard> {
   }
 
   int totalrenders = 0;
-  int range = 30;
+
+  int _range = 30;
+  int getRange() => _range;
+  void setRange(n) {
+    _range = n;
+  }
+
   int _page = 0;
   void setPage(page) {
     var len = src.length;
@@ -114,12 +139,25 @@ class _DashboardState extends State<Dashboard> {
       return;
     }
 
-    for (int i = 0; i < len; i++) {
-      int upLimit = page + range;
+    for (int i = page; i < len; i++) {
+      int upLimit = page + getRange();
       if (upLimit > len) {
         upLimit = len;
       }
-      if (i < upLimit && i > (page - 10)) {
+      if ((i < upLimit) &&
+          ((i > (page - getRange())) || (i < ((page + getRange()) % len)))) {
+        pool2.withResource(() => precache(src[i]));
+      } else {
+        removeFromCache(src[(i)]);
+      }
+    }
+    for (int i = 0; i < page; i++) {
+      int upLimit = page + getRange();
+      if (upLimit > len) {
+        upLimit = len;
+      }
+      if ((i < upLimit) &&
+          ((i > (page - getRange())) || (i < ((page + getRange()) % len)))) {
         pool2.withResource(() => precache(src[i]));
       } else {
         removeFromCache(src[(i)]);
@@ -221,6 +259,16 @@ class _DashboardState extends State<Dashboard> {
                           child: Text('$totalThreads/$maxThreads/$maxDownloads')
                           //color: (Colors.green),
                           ),
+                      src.length > 0
+                          ? Align(
+                              alignment: const Alignment(0, 0.90),
+                              child: Text(
+                                '${createLabel(src[getPage()])}',
+                                textAlign: TextAlign.center,
+                              )
+                              //color: (Colors.green),
+                              )
+                          : Container(),
                       Align(
                         alignment: const Alignment(-0.95, 0.95),
                         child: KeyboardListener(
@@ -269,6 +317,8 @@ class _DashboardState extends State<Dashboard> {
                                     refreshCallback: () {
                                       setState(() {});
                                     },
+                                    getRange: getRange,
+                                    setRange: setRange,
                                     getAutoDuration: getAutoDuration,
                                     setAutoDuration: setAutoDuration,
                                     getRandomSeed: getRandomSeed,
@@ -321,6 +371,13 @@ class _DashboardState extends State<Dashboard> {
                       inactiveColor: Colors.yellow.withOpacity(0.2),
                       activeColor: Colors.yellow.withOpacity(0.2),
                       value: getPage().toDouble() / total,
+                      onChangeStart: (newPage) {
+                        setAuto(false);
+                        setDisableCaching(true);
+                      },
+                      onChangeEnd: (newPage) {
+                        setDisableCaching(false);
+                      },
                       onChanged: (double value) {
                         carouselController.jumpToPage((value * total).toInt());
                       },
@@ -346,6 +403,8 @@ class _DashboardState extends State<Dashboard> {
                       refreshCallback: () {
                         setState(() {});
                       },
+                      getRange: getRange,
+                      setRange: setRange,
                       getAutoDuration: getAutoDuration,
                       setAutoDuration: setAutoDuration,
                       getRandomSeed: getRandomSeed,
@@ -406,6 +465,8 @@ class _DashboardState extends State<Dashboard> {
                     refreshCallback: () {
                       setState(() {});
                     },
+                    getRange: getRange,
+                    setRange: setRange,
                     getAutoDuration: getAutoDuration,
                     setAutoDuration: setAutoDuration,
                     getRandomSeed: getRandomSeed,
@@ -558,7 +619,7 @@ class _DashboardState extends State<Dashboard> {
     src[index] = updatedShot;
     final page = getPage();
     if (url.isNotEmpty) {
-      if ((index - page <= range) && (index - page > -5)) {
+      if ((index - page <= getRange()) && (index - page > -5)) {
         if (!getPrecaching().contains(job)) {
           pool2.withResource(() => precache(updatedShot));
         }
@@ -583,6 +644,8 @@ class _DashboardState extends State<Dashboard> {
   }
 
   void precache(Shot s) {
+    if (getDisableCaching()) return;
+    if (precaching.length > maxDownloads) return;
     if (s.image != null) return;
     final url = s.url;
     if (url.isEmpty) return;
@@ -754,5 +817,9 @@ class _DashboardState extends State<Dashboard> {
 
   refresh() {
     setState(() {});
+  }
+
+  createLabel(Shot s) {
+    return '${s.seed} ${models[s.method]} ${samplers[s.sampler]} ${s.cfg} ${s.steps}';
   }
 }
