@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.eugenio" "\0"
-            VALUE "FileDescription", "green_bush" "\0"
+            VALUE "FileDescription", "GreenBush" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "green_bush" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2023 com.eugenio. All rights reserved." "\0"
-            VALUE "OriginalFilename", "green_bush.exe" "\0"
-            VALUE "ProductName", "green_bush" "\0"
+            VALUE "OriginalFilename", "GreenBush.exe" "\0"
+            VALUE "ProductName", "GreenBush" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
