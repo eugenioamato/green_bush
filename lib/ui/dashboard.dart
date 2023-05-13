@@ -24,7 +24,7 @@ class Dashboard extends StatefulWidget {
 class _DashboardState extends State<Dashboard> {
   int maxThreads = 50;
   TextEditingController controller = TextEditingController()
-    ..text = "young Lindsay And Sidney Greenbush";
+    ..text = "Green bush, awesome, ";
   TextEditingController controller2 = TextEditingController()
     ..text = "cartoon, blur";
   CarouselController carouselController = CarouselController();
@@ -256,7 +256,7 @@ class _DashboardState extends State<Dashboard> {
                           child: Text('$totalThreads/$maxThreads/$maxDownloads')
                           //color: (Colors.green),
                           ),
-                      src.isNotEmpty
+                      ((src.isNotEmpty) && (getPage()<src.length))
                           ? Align(
                               alignment: const Alignment(0, 0.90),
                               child: Text(
@@ -369,7 +369,7 @@ class _DashboardState extends State<Dashboard> {
                       activeColor: getComplete()
                           ? Colors.lightGreen
                           : Colors.yellow.withOpacity(0.2),
-                      value: getPage().toDouble() / total,
+                      value: (getPage()>total?1.0:getPage().toDouble() / total),
                       onChangeStart: (newPage) {
                         setAuto(false);
                         setDisableCaching(true);

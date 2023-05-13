@@ -112,7 +112,8 @@ class _ActionsWidgetState extends State<ActionsWidget> {
                         widget.multispanCallback();
                       },
                       icon: Icon(
-                        Icons.generating_tokens,
+                        Icons.add_task,
+                        size: 32,
                         color: (widget.getActiveThreads() == 0
                             ? Colors.green
                             : widget.getActiveThreads() >
