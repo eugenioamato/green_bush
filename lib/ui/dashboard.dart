@@ -108,6 +108,12 @@ class _DashboardState extends State<Dashboard> with WindowListener {
         _randomSeed = v;
       });
 
+  bool _complete = true;
+  bool getComplete() => _complete;
+  void setComplete(n) {
+    _complete = n;
+  }
+
   bool _upscale = false;
   bool getUpscale() => _upscale;
   void setUpscale(n) {
@@ -168,26 +174,16 @@ class _DashboardState extends State<Dashboard> with WindowListener {
       _page = 0;
       return;
     }
-
-    for (int i = page; i < len; i++) {
-      int upLimit = page + getRange();
-      if (upLimit > len) {
-        upLimit = len;
-      }
-      if ((i < upLimit) &&
-          ((i > (page - getRange())) || (i < ((page + getRange()) % len)))) {
-        pool2.withResource(() => precache(src[i]));
-      } else {
-        removeFromCache(src[(i)]);
-      }
+    int upLimit = page + getRange();
+    if (upLimit > len) {
+      upLimit = len;
     }
-    for (int i = 0; i < page; i++) {
-      int upLimit = page + getRange();
-      if (upLimit > len) {
-        upLimit = len;
-      }
+
+    for (int i = 0; i < len; i++) {
       if ((i < upLimit) &&
-          ((i > (page - getRange())) || (i < ((page + getRange()) % len)))) {
+          ((i > (page - getRange())) ||
+              ((getRange() + page > len) &&
+                  (i < ((page + getRange()) % len))))) {
         pool2.withResource(() => precache(src[i]));
       } else {
         removeFromCache(src[(i)]);
@@ -396,10 +392,13 @@ class _DashboardState extends State<Dashboard> with WindowListener {
                     focusNode: focusNode,
                     child: Slider(
                       secondaryTrackValue: getLoading(),
+                      secondaryActiveColor: Colors.lightGreen,
                       divisions: total,
                       thumbColor: Colors.green,
                       inactiveColor: Colors.yellow.withOpacity(0.2),
-                      activeColor: Colors.yellow.withOpacity(0.2),
+                      activeColor: getComplete()
+                          ? Colors.lightGreen
+                          : Colors.yellow.withOpacity(0.2),
                       value: getPage().toDouble() / total,
                       onChangeStart: (newPage) {
                         setAuto(false);
@@ -652,7 +651,7 @@ class _DashboardState extends State<Dashboard> with WindowListener {
     src[index] = updatedShot;
     final page = getPage();
     if (url.isNotEmpty) {
-      if ((index - page <= getRange()) && (index - page > -5)) {
+      if ((index - page <= getRange()) && (index - page >= 0)) {
         if (!getPrecaching().contains(job)) {
           pool2.withResource(() => precache(updatedShot));
         }
@@ -842,11 +841,25 @@ class _DashboardState extends State<Dashboard> with WindowListener {
 
   void updateSecondarySlider() {
     int k = getPage();
+    int j = k;
     for (int i = getPage(); i < src.length; i++) {
       if (src[i].image == null) break;
       k++;
     }
     setLoading(k / src.length);
+    bool complete = true;
+    for (int i = 0; i < j; i++) {
+      if (src[i].image == null) {
+        complete = false;
+        break;
+      }
+    }
+    if (complete) {
+      setComplete(true);
+    } else {
+      setComplete(false);
+    }
+
     if (mounted) {
       setState(() {});
     }
