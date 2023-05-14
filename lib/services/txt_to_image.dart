@@ -33,8 +33,22 @@ class TxtToImage {
 
   final Dio dio = Dio();
 
-  void startGeneration(int index, prompt, nprompt, model, sampler, cfg, steps,
-      seed, upscale, apiKey, setState, repeatIndex) async {
+  void startGeneration(
+      int index,
+      prompt,
+      nprompt,
+      model,
+      sampler,
+      cfg,
+      steps,
+      seed,
+      upscale,
+      apiKey,
+      apiName,
+      apiGenerationEndpoint,
+      apiFetchEndpoint,
+      setState,
+      repeatIndex) async {
     if (repeatIndex > 3) {
       return;
     }
@@ -60,10 +74,10 @@ class TxtToImage {
     final Response<dynamic> result;
 
     try {
-      result = await dio.post("https://api.prodia.com/v1/job",
+      result = await dio.post(apiGenerationEndpoint,
           data: str,
           options: Options(headers: {
-            "X-Prodia-Key": apiKey,
+            apiName: apiKey,
             'accept': 'application/json',
             'content-type': 'application/json'
           }));
@@ -71,7 +85,8 @@ class TxtToImage {
       if (kDebugMode) {
         print('error on job creation \n$e');
       }
-      eraseOrRedo(placeholderShot, setState, apiKey, repeatIndex, upscale);
+      eraseOrRedo(placeholderShot, setState, apiKey, apiName,
+          apiGenerationEndpoint, apiFetchEndpoint, repeatIndex, upscale);
       return;
     }
 
@@ -88,16 +103,17 @@ class TxtToImage {
     do {
       Response result2;
       try {
-        result2 = await dio.get("https://api.prodia.com/v1/job/$job",
+        result2 = await dio.get("$apiFetchEndpoint$job",
             options: Options(headers: {
-              "X-Prodia-Key": apiKey,
+              apiName: apiKey,
               'accept': 'application/json',
             }));
       } on Exception catch (e) {
         if (kDebugMode) {
           print('error during job retrieving : $e');
         }
-        eraseOrRedo(placeholderShot, setState, apiKey, repeatIndex, upscale);
+        eraseOrRedo(earlyShot, setState, apiKey, apiName, apiGenerationEndpoint,
+            apiFetchEndpoint, repeatIndex, upscale);
         return;
       }
 
@@ -110,7 +126,8 @@ class TxtToImage {
           if (kDebugMode) {
             print('failed job with:\n$resp2');
           }
-          eraseOrRedo(placeholderShot, setState, apiKey, repeatIndex, upscale);
+          eraseOrRedo(earlyShot, setState, apiKey, apiName,
+              apiGenerationEndpoint, apiFetchEndpoint, repeatIndex, upscale);
           return;
         }
         await Future.delayed(const Duration(seconds: 1));
@@ -138,13 +155,29 @@ class TxtToImage {
     setState(() {});
   }
 
-  void eraseOrRedo(Shot s, setState, apiKey, repeatIndex, upscale) {
+  void eraseOrRedo(Shot s, setState, apiKey, apiName, apiGenerationEnpoint,
+      apiFetchEndpoint, repeatIndex, upscale) {
     systemPreferences.activeThreads--;
-    startGeneration(s.index, s.prompt, s.nprompt, s.model, s.sampler, s.cfg,
-        s.steps, s.seed, upscale, apiKey, setState, repeatIndex + 1);
+    startGeneration(
+        s.index,
+        s.prompt,
+        s.nprompt,
+        s.model,
+        s.sampler,
+        s.cfg,
+        s.steps,
+        s.seed,
+        upscale,
+        apiKey,
+        apiName,
+        apiGenerationEnpoint,
+        apiFetchEndpoint,
+        setState,
+        repeatIndex + 1);
   }
 
-  void multiSpan(setState, apiKey, prompt, nprompt) async {
+  void multiSpan(setState, apiKey, apiName, apiGenerationEndpoint,
+      apiFetchEndpoint, prompt, nprompt) async {
     playbackState.setAuto(false);
     imageRepository.clearCache();
 
@@ -191,6 +224,9 @@ class TxtToImage {
                       seed,
                       upscale,
                       apiKey,
+                      apiName,
+                      apiGenerationEndpoint,
+                      apiFetchEndpoint,
                       setState,
                       0,
                     ));

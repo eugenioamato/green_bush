@@ -37,11 +37,16 @@ class _DashboardState extends State<Dashboard> {
   late final TxtToImage txtToImage;
   late final String apiKey;
   late final String apiName;
+  late final String apiGenerationEndpoint;
+  late final String apiFetchEndpoint;
 
   @override
   void initState() {
     apiKey = const String.fromEnvironment('API_KEY');
     apiName = const String.fromEnvironment('API_NAME');
+    apiGenerationEndpoint =
+        const String.fromEnvironment('api_generation_endpoint');
+    apiFetchEndpoint = const String.fromEnvironment('api_fetch_endpoint');
 
     imageRepository = ImageRepository(systemPreferences, refresh);
     playbackState = PlaybackState(imageRepository, systemPreferences);
@@ -191,6 +196,9 @@ class _DashboardState extends State<Dashboard> {
                                         txtToImage.multiSpan(
                                       setState,
                                       apiKey,
+                                      apiName,
+                                      apiGenerationEndpoint,
+                                      apiFetchEndpoint,
                                       controller.text,
                                       controller2.text,
                                     ),
@@ -243,6 +251,9 @@ class _DashboardState extends State<Dashboard> {
                       multispanCallback: () => txtToImage.multiSpan(
                         setState,
                         apiKey,
+                        apiName,
+                        apiGenerationEndpoint,
+                        apiFetchEndpoint,
                         controller.text,
                         controller2.text,
                       ),
@@ -290,6 +301,9 @@ class _DashboardState extends State<Dashboard> {
                     multispanCallback: () => txtToImage.multiSpan(
                       setState,
                       apiKey,
+                      apiName,
+                      apiGenerationEndpoint,
+                      apiFetchEndpoint,
                       controller.text,
                       controller2.text,
                     ),
