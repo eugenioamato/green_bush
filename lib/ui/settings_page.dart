@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:green_bush/services/system_preferences.dart';
 
 class SettingsPage extends StatefulWidget {
+  final SystemPreferences systemPreferences;
   final Function getRandomSeed;
   final Function setRandomSeed;
   final List<String> models;
@@ -11,8 +13,6 @@ class SettingsPage extends StatefulWidget {
   final Function toggleSampler;
   final Function getAutoDuration;
   final Function setAutoDuration;
-  final Function getRange;
-  final Function setRange;
   final Function getUpscale;
   final Function setUpscale;
 
@@ -28,10 +28,9 @@ class SettingsPage extends StatefulWidget {
       required this.toggleSampler,
       required this.getAutoDuration,
       required this.setAutoDuration,
-      required this.getRange,
-      required this.setRange,
       required this.getUpscale,
-      required this.setUpscale})
+      required this.setUpscale,
+      required this.systemPreferences})
       : super(key: key);
 
   @override
@@ -120,15 +119,16 @@ class _SettingsPageState extends State<SettingsPage> {
                   color: Colors.black,
                   child: Column(
                     children: [
-                      Text('Cache range: ${widget.getRange()}'),
+                      Text(
+                          'Cache range: ${widget.systemPreferences.getRange()}'),
                       Slider.adaptive(
                           min: 1,
                           max: 10000,
                           divisions: 10000,
-                          value: widget.getRange().toDouble(),
+                          value: widget.systemPreferences.getRange().toDouble(),
                           onChanged: (r) {
                             setState(() {
-                              widget.setRange(r.toInt());
+                              widget.systemPreferences.setRange(r.toInt());
                             });
                           })
                     ],

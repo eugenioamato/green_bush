@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:green_bush/models/shot.dart';
 import 'package:green_bush/services/generation_preferences.dart';
+import 'package:green_bush/services/system_preferences.dart';
 import 'package:green_bush/ui/actions_widget.dart';
 import 'package:green_bush/ui/carousel_widget.dart';
 import 'package:green_bush/ui/settings_widget.dart';
@@ -30,6 +31,7 @@ class _DashboardState extends State<Dashboard> {
   CarouselController carouselController = CarouselController();
 
   GenerationPreferences g = GenerationPreferences();
+  SystemPreferences p = SystemPreferences();
 
   var _pressed = false;
   void manageKeyEvent(KeyEvent event) {
@@ -79,16 +81,6 @@ class _DashboardState extends State<Dashboard> {
   }
 
   late final String apiKey;
-  int maxDownloads = 25;
-  int maxThreads = 50;
-  int activeThreads = 0;
-  int getActiveThreads() => activeThreads;
-
-  int _range = 30;
-  int getRange() => _range;
-  void setRange(n) {
-    _range = n;
-  }
 
   bool _auto = false;
   bool getAuto() => _auto;
@@ -111,11 +103,11 @@ class _DashboardState extends State<Dashboard> {
     if (kDebugMode) {
       print('API_KEY IS $apiKey');
     }
-    pool = Pool(maxThreads, timeout: const Duration(seconds: 21));
-    pool2 = Pool(maxDownloads, timeout: const Duration(seconds: 16));
+    pool = Pool(p.maxThreads, timeout: const Duration(seconds: 21));
+    pool2 = Pool(p.maxDownloads, timeout: const Duration(seconds: 16));
     if (Platform.isWindows || Platform.isMacOS) {
-      setRange(50);
-      maxThreads = 50;
+      p.setRange(50);
+      p.maxThreads = 50;
     }
     super.initState();
   }
@@ -136,16 +128,16 @@ class _DashboardState extends State<Dashboard> {
       _page = 0;
       return;
     }
-    int upLimit = page + getRange();
+    int upLimit = page + p.getRange();
     if (upLimit > len) {
       upLimit = len;
     }
 
     for (int i = 0; i < len; i++) {
       if ((i < upLimit) &&
-          ((i > (page - getRange())) ||
-              ((getRange() + page > len) &&
-                  (i < ((page + getRange()) % len))))) {
+          ((i > (page - p.getRange())) ||
+              ((p.getRange() + page > len) &&
+                  (i < ((page + p.getRange()) % len))))) {
         pool2.withResource(() => precache(src[i]));
       } else {
         removeFromCache(src[(i)]);
@@ -193,7 +185,7 @@ class _DashboardState extends State<Dashboard> {
             print('rebuilding dash');
           }
           final total = (src.length) < 2 ? 1 : (src.length) - 1;
-          final totalThreads = getActiveThreads();
+          final totalThreads = p.getActiveThreads();
           if (orientation == Orientation.landscape) {
             return Flex(
               direction: Axis.vertical,
@@ -221,18 +213,19 @@ class _DashboardState extends State<Dashboard> {
                       ),
                       Align(
                         alignment: const Alignment(0.95, -0.95),
-                        child: Icon((totalThreads > (maxThreads * 0.7))
+                        child: Icon((totalThreads > (p.maxThreads * 0.7))
                             ? Icons.hourglass_full
-                            : (totalThreads > (maxThreads * 0.5))
+                            : (totalThreads > (p.maxThreads * 0.5))
                                 ? Icons.hourglass_bottom
-                                : (totalThreads > (maxThreads * 0.1))
+                                : (totalThreads > (p.maxThreads * 0.1))
                                     ? Icons.hourglass_empty
                                     : Icons.check),
                         //color: (Colors.green),
                       ),
                       Align(
                           alignment: const Alignment(0.95, -0.85),
-                          child: Text('$totalThreads/$maxThreads/$maxDownloads')
+                          child: Text(
+                              '$totalThreads/${p.maxThreads}/${p.maxDownloads}')
                           //color: (Colors.green),
                           ),
                       ((src.isNotEmpty) && (getPage() < src.length))
@@ -284,14 +277,12 @@ class _DashboardState extends State<Dashboard> {
                                 child: Card(
                                   color: Colors.black,
                                   child: SettingsWidget(
+                                    systemPreferences: p,
                                     showActions: true,
                                     orientation: orientation,
-                                    getActiveThreads: getActiveThreads,
                                     refreshCallback: () {
                                       setState(() {});
                                     },
-                                    getRange: getRange,
-                                    setRange: setRange,
                                     getAutoDuration: getAutoDuration,
                                     setAutoDuration: setAutoDuration,
                                     generationPreferences: g,
@@ -306,7 +297,6 @@ class _DashboardState extends State<Dashboard> {
                                     setAuto: setAuto,
                                     getAuto: getAuto,
                                     multispanCallback: _multiSpan,
-                                    maxThreads: maxThreads,
                                   ),
                                 ),
                               )
@@ -364,18 +354,15 @@ class _DashboardState extends State<Dashboard> {
                 Flexible(
                     flex: 6,
                     child: ActionsWidget(
+                      systemPreferences: p,
                       generationPreferences: g,
                       controller2: controller2,
                       controller: controller,
-                      maxThreads: maxThreads,
                       orientation: orientation,
                       multispanCallback: _multiSpan,
-                      getActiveThreads: getActiveThreads,
                       refreshCallback: () {
                         setState(() {});
                       },
-                      getRange: getRange,
-                      setRange: setRange,
                       getAutoDuration: getAutoDuration,
                       setAutoDuration: setAutoDuration,
                       setAuto: setAuto,
@@ -427,16 +414,14 @@ class _DashboardState extends State<Dashboard> {
                 Expanded(
                   flex: 5,
                   child: SettingsWidget(
+                    systemPreferences: p,
                     orientation: orientation,
                     showActions: false,
                     refreshCallback: () {
                       setState(() {});
                     },
-                    getRange: getRange,
-                    setRange: setRange,
                     getAutoDuration: getAutoDuration,
                     setAutoDuration: setAutoDuration,
-                    getActiveThreads: getActiveThreads,
                     controller: controller,
                     controller2: controller2,
                     models: models,
@@ -448,7 +433,6 @@ class _DashboardState extends State<Dashboard> {
                     setAuto: setAuto,
                     getAuto: getAuto,
                     multispanCallback: _multiSpan,
-                    maxThreads: maxThreads,
                     generationPreferences: g,
                   ),
                 ),
@@ -468,7 +452,7 @@ class _DashboardState extends State<Dashboard> {
       print('starting from ${controller.text}');
     }
     setState(() {
-      activeThreads++;
+      p.activeThreads++;
     });
 
     final data = <String, dynamic>{
@@ -526,7 +510,7 @@ class _DashboardState extends State<Dashboard> {
         if (index == -1) return;
         src.removeAt(index);
         totalrenders--;
-        activeThreads--;
+        p.activeThreads--;
         setState(() {});
         return;
       }
@@ -547,7 +531,7 @@ class _DashboardState extends State<Dashboard> {
           if (getPage() >= index) carouselController.previousPage();
           src.removeAt(index);
           totalrenders--;
-          activeThreads--;
+          p.activeThreads--;
           if (kDebugMode) {
             print('failed job with:\n$resp2');
           }
@@ -575,18 +559,18 @@ class _DashboardState extends State<Dashboard> {
       if (kDebugMode) {
         print('Orphaned job $job');
       }
-      activeThreads--;
+      p.activeThreads--;
       return;
     }
     src[index] = updatedShot;
     final page = getPage();
     if (url.isNotEmpty) {
-      if ((index - page <= getRange()) && (index - page >= 0)) {
+      if ((index - page <= p.getRange()) && (index - page >= 0)) {
         if (!getPrecaching().contains(job)) {
           pool2.withResource(() => precache(updatedShot));
         }
       }
-      activeThreads--;
+      p.activeThreads--;
       setState(() {});
     }
   }
@@ -606,7 +590,7 @@ class _DashboardState extends State<Dashboard> {
   }
 
   void precache(Shot s) {
-    if (precaching.length > maxDownloads) return;
+    if (precaching.length > p.maxDownloads) return;
     if (s.image != null) return;
     final url = s.url;
     if (url.isEmpty) return;
@@ -623,7 +607,7 @@ class _DashboardState extends State<Dashboard> {
     if (kDebugMode) {
       print('starting precache ${s.id}');
     }
-    activeThreads++;
+    p.activeThreads++;
     late final Image image;
     try {
       image = Image(
@@ -635,7 +619,7 @@ class _DashboardState extends State<Dashboard> {
       if (kDebugMode) {
         print('error creating image $e');
       }
-      activeThreads--;
+      p.activeThreads--;
       return;
     }
 
@@ -666,10 +650,10 @@ class _DashboardState extends State<Dashboard> {
         print('error resolving image $e');
       }
       getPrecaching().remove(s.id);
-      activeThreads--;
+      p.activeThreads--;
       return;
     }
-    activeThreads--;
+    p.activeThreads--;
     s.image = image;
   }
 

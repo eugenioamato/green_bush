@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:green_bush/services/generation_preferences.dart';
+import 'package:green_bush/services/system_preferences.dart';
 import 'package:green_bush/ui/prompt_widget.dart';
 import 'package:green_bush/ui/settings_page.dart';
 
 class ActionsWidget extends StatefulWidget {
   final TextEditingController controller;
   final TextEditingController controller2;
+  final SystemPreferences systemPreferences;
   final GenerationPreferences generationPreferences;
   final Function refreshCallback;
   final Function multispanCallback;
   final Function setAuto;
   final Function getAuto;
-  final Function getActiveThreads;
   final Orientation orientation;
   final Function isModelEnabled;
   final Function toggleModel;
@@ -21,9 +22,7 @@ class ActionsWidget extends StatefulWidget {
   final Function toggleSampler;
   final Function getAutoDuration;
   final Function setAutoDuration;
-  final Function getRange;
-  final Function setRange;
-  final int maxThreads;
+
   const ActionsWidget({
     Key? key,
     required this.controller,
@@ -33,8 +32,6 @@ class ActionsWidget extends StatefulWidget {
     required this.setAuto,
     required this.getAuto,
     required this.orientation,
-    required this.getActiveThreads,
-    required this.maxThreads,
     required this.isModelEnabled,
     required this.toggleModel,
     required this.models,
@@ -43,9 +40,8 @@ class ActionsWidget extends StatefulWidget {
     required this.toggleSampler,
     required this.getAutoDuration,
     required this.setAutoDuration,
-    required this.getRange,
-    required this.setRange,
     required this.generationPreferences,
+    required this.systemPreferences,
   }) : super(key: key);
 
   @override
@@ -79,6 +75,7 @@ class _ActionsWidgetState extends State<ActionsWidget> {
                           Navigator.of(context)
                               .push(MaterialPageRoute(builder: (_) {
                             return SettingsPage(
+                              systemPreferences: widget.systemPreferences,
                               getRandomSeed:
                                   widget.generationPreferences.getRandomSeed,
                               setRandomSeed:
@@ -91,8 +88,6 @@ class _ActionsWidgetState extends State<ActionsWidget> {
                               isSamplerEnabled: widget.isSamplerEnabled,
                               getAutoDuration: widget.getAutoDuration,
                               setAutoDuration: widget.setAutoDuration,
-                              getRange: widget.getRange,
-                              setRange: widget.setRange,
                               getUpscale:
                                   widget.generationPreferences.getUpscale,
                               setUpscale:
@@ -112,10 +107,10 @@ class _ActionsWidgetState extends State<ActionsWidget> {
                       icon: Icon(
                         Icons.add_task,
                         size: 32,
-                        color: (widget.getActiveThreads() == 0
+                        color: (widget.systemPreferences.getActiveThreads() == 0
                             ? Colors.green
-                            : widget.getActiveThreads() >
-                                    widget.maxThreads * 0.5
+                            : widget.systemPreferences.getActiveThreads() >
+                                    widget.systemPreferences.maxThreads * 0.5
                                 ? Colors.red
                                 : Colors.orange),
                       )),
