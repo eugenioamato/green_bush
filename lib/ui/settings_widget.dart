@@ -13,12 +13,6 @@ class SettingsWidget extends StatefulWidget {
   final Orientation orientation;
   final TextEditingController controller;
   final TextEditingController controller2;
-  final Function isModelEnabled;
-  final Function toggleModel;
-  final List<String> models;
-  final List<String> samplers;
-  final Function isSamplerEnabled;
-  final Function toggleSampler;
   final Function refreshCallback;
   final Function multispanCallback;
 
@@ -30,12 +24,6 @@ class SettingsWidget extends StatefulWidget {
     required this.controller2,
     required this.showActions,
     required this.orientation,
-    required this.isModelEnabled,
-    required this.toggleModel,
-    required this.models,
-    required this.samplers,
-    required this.isSamplerEnabled,
-    required this.toggleSampler,
     required this.generationPreferences,
     required this.systemPreferences,
     required this.playbackState,
@@ -146,17 +134,11 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                   generationPreferences: widget.generationPreferences,
                   systemPreferences: widget.systemPreferences,
                   playbackState: widget.playbackState,
-                  isModelEnabled: widget.isModelEnabled,
-                  toggleModel: widget.toggleModel,
-                  models: widget.models,
                   controller2: widget.controller2,
                   controller: widget.controller,
                   orientation: widget.orientation,
                   multispanCallback: widget.multispanCallback,
                   refreshCallback: widget.refreshCallback,
-                  samplers: widget.samplers,
-                  isSamplerEnabled: widget.isSamplerEnabled,
-                  toggleSampler: widget.toggleSampler,
                 )),
         ],
       ),

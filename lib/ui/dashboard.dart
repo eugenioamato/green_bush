@@ -99,8 +99,6 @@ class _DashboardState extends State<Dashboard> {
     super.initState();
   }
 
-  int totalrenders = 0;
-
   FocusNode focusNode = FocusNode();
 
   @override
@@ -229,12 +227,6 @@ class _DashboardState extends State<Dashboard> {
                                         generationPreferences,
                                     controller: controller,
                                     controller2: controller2,
-                                    models: models,
-                                    toggleModel: toggleModel,
-                                    isModelEnabled: isModelEnabled,
-                                    samplers: samplers,
-                                    isSamplerEnabled: isSamplerEnabled,
-                                    toggleSampler: toggleSampler,
                                     multispanCallback: _multiSpan,
                                     playbackState: playbackState,
                                   ),
@@ -247,7 +239,7 @@ class _DashboardState extends State<Dashboard> {
                       Align(
                         alignment: const Alignment(0, 0.75),
                         child: Text(
-                          '${playbackState.getPage() + 1} / ${imageRepository.src.length} / $totalrenders',
+                          '${playbackState.getPage() + 1} / ${imageRepository.src.length} / ${systemPreferences.totalrenders}',
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
                       ),
@@ -285,19 +277,13 @@ class _DashboardState extends State<Dashboard> {
                       refreshCallback: () {
                         setState(() {});
                       },
-                      isModelEnabled: isModelEnabled,
-                      toggleModel: toggleModel,
-                      models: models,
-                      samplers: samplers,
-                      isSamplerEnabled: isSamplerEnabled,
-                      toggleSampler: toggleSampler,
                       playbackState: playbackState,
                     )),
                 Flexible(
                     child: Align(
                   alignment: Alignment.bottomCenter,
                   child: Text(
-                    '${playbackState.getPage()} / ${imageRepository.src.length} / $totalrenders',
+                    '${playbackState.getPage()} / ${imageRepository.src.length} / ${systemPreferences.totalrenders}',
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 )),
@@ -337,12 +323,6 @@ class _DashboardState extends State<Dashboard> {
                     },
                     controller: controller,
                     controller2: controller2,
-                    models: models,
-                    isModelEnabled: isModelEnabled,
-                    toggleModel: toggleModel,
-                    samplers: samplers,
-                    isSamplerEnabled: isSamplerEnabled,
-                    toggleSampler: toggleSampler,
                     multispanCallback: _multiSpan,
                     generationPreferences: generationPreferences,
                     playbackState: playbackState,
@@ -368,12 +348,12 @@ class _DashboardState extends State<Dashboard> {
     });
 
     final data = <String, dynamic>{
-      "model": models[method],
+      "model": generationPreferences.models[method],
       "prompt": prompt,
       "negative_prompt": nprompt,
       "steps": steps,
       "cfg_scale": cfg,
-      "sampler": samplers[sampler],
+      "sampler": generationPreferences.samplers[sampler],
       "aspect_ratio": "landscape",
       "seed": seed,
       "upscale": upscale,
@@ -421,7 +401,7 @@ class _DashboardState extends State<Dashboard> {
 
         if (index == -1) return;
         imageRepository.src.removeAt(index);
-        totalrenders--;
+        systemPreferences.totalrenders--;
         systemPreferences.activeThreads--;
         setState(() {});
         return;
@@ -444,7 +424,7 @@ class _DashboardState extends State<Dashboard> {
             carouselController.previousPage();
           }
           imageRepository.src.removeAt(index);
-          totalrenders--;
+          systemPreferences.totalrenders--;
           systemPreferences.activeThreads--;
           if (kDebugMode) {
             print('failed job with:\n$resp2');
@@ -490,71 +470,6 @@ class _DashboardState extends State<Dashboard> {
     }
   }
 
-  final models = [
-    "elldreths-vivid-mix.safetensors [342d9d26]", //#shiny
-    "deliberate_v2.safetensors [10ec4b29]", // #realistic #errorprone
-    "dreamshaper_5BakedVae.safetensors [a3fbf318]", // #art b&w
-    "revAnimated_v122.safetensors [3f4fefd9]", // #plastic
-    "lyriel_v15.safetensors [65d547c5]", // #jesus
-    "Realistic_Vision_V2.0.safetensors [79587710]",
-    "timeless-1.0.ckpt [7c4971d4]",
-    "portrait+1.0.safetensors [1400e684]",
-    "openjourney_V4.ckpt [ca2f377f]",
-    "theallys-mix-ii-churned.safetensors [5d9225a4]",
-    "analog-diffusion-1.0.ckpt [9ca13f02]",
-  ];
-
-  var selectedModels = [
-    true,
-    false,
-    false,
-    true,
-    true,
-    false,
-    false,
-    false,
-    false,
-    false,
-    false
-  ];
-
-  bool isModelEnabled(n) {
-    if ((n < 0) || (n >= models.length)) {
-      return false;
-    } else {
-      return selectedModels[n];
-    }
-  }
-
-  void toggleModel(n) {
-    if ((n < 0) || (n >= models.length)) return;
-    selectedModels[n] = !selectedModels[n];
-  }
-
-  final samplers = [
-    "DPM++ 2M Karras",
-    "Euler",
-    "Euler a",
-    "Heun",
-  ];
-
-  final selectedSamplers = [
-    true,
-    false,
-    true,
-    true,
-  ];
-
-  bool isSamplerEnabled(s) {
-    if ((s < 0) || (s >= samplers.length)) return false;
-    return selectedSamplers[s];
-  }
-
-  void toggleSampler(s) {
-    if ((s < 0) || (s >= samplers.length)) return;
-    selectedSamplers[s] = !selectedSamplers[s];
-  }
-
   late final Pool pool;
 
   void _multiSpan() {
@@ -562,8 +477,9 @@ class _DashboardState extends State<Dashboard> {
     imageRepository.clearCache();
     imageRepository.src.clear();
     carouselController.jumpToPage(0);
+    playbackState.setLoading(0.0);
     focusNode.requestFocus();
-    totalrenders = 0;
+    systemPreferences.totalrenders = 0;
     setState(() {
       imageRepository.src.clear();
     });
@@ -580,17 +496,21 @@ class _DashboardState extends State<Dashboard> {
 
     final upscale = generationPreferences.getUpscale();
 
-    for (int method = 0; method < selectedModels.length; method++) {
-      if (selectedModels[method]) {
-        for (int sampler = 0; sampler < samplers.length; sampler++) {
-          if (selectedSamplers[sampler]) {
+    for (int method = 0;
+        method < generationPreferences.selectedModels.length;
+        method++) {
+      if (generationPreferences.selectedModels[method]) {
+        for (int sampler = 0;
+            sampler < generationPreferences.samplers.length;
+            sampler++) {
+          if (generationPreferences.selectedSamplers[sampler]) {
             for (int cfg = generationPreferences.cfgSliderValue.toInt();
                 cfg < generationPreferences.cfgSliderEValue + 1;
                 cfg++) {
               for (int steps = generationPreferences.stepSliderValue.toInt();
                   steps < generationPreferences.stepSliderEValue + 1;
                   steps += 1) {
-                totalrenders++;
+                systemPreferences.totalrenders++;
                 pool.withResource(() => _startGeneration(prompt, nprompt,
                     method, sampler, cfg, steps, seed, upscale, apiKey));
                 Future.delayed(const Duration(milliseconds: 50));
@@ -609,6 +529,6 @@ class _DashboardState extends State<Dashboard> {
   }
 
   createLabel(Shot s) {
-    return '${s.seed} ${models[s.method]} ${samplers[s.sampler]} ${s.cfg} ${s.steps}';
+    return '${s.seed} ${generationPreferences.models[s.method]} ${generationPreferences.samplers[s.sampler]} ${s.cfg} ${s.steps}';
   }
 }

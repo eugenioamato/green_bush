@@ -1,36 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:green_bush/services/generation_preferences.dart';
+import 'package:green_bush/services/playback_state.dart';
 import 'package:green_bush/services/system_preferences.dart';
 
 class SettingsPage extends StatefulWidget {
   final SystemPreferences systemPreferences;
-  final Function getRandomSeed;
-  final Function setRandomSeed;
-  final List<String> models;
-  final Function isModelEnabled;
-  final Function toggleModel;
-  final List<String> samplers;
-  final Function isSamplerEnabled;
-  final Function toggleSampler;
-  final Function getAutoDuration;
-  final Function setAutoDuration;
-  final Function getUpscale;
-  final Function setUpscale;
-
+  final GenerationPreferences generationPreferences;
+  final PlaybackState playbackState;
   const SettingsPage(
       {Key? key,
-      required this.getRandomSeed,
-      required this.setRandomSeed,
-      required this.isModelEnabled,
-      required this.toggleModel,
-      required this.models,
-      required this.samplers,
-      required this.isSamplerEnabled,
-      required this.toggleSampler,
-      required this.getAutoDuration,
-      required this.setAutoDuration,
-      required this.getUpscale,
-      required this.setUpscale,
-      required this.systemPreferences})
+      required this.systemPreferences,
+      required this.generationPreferences,
+      required this.playbackState})
       : super(key: key);
 
   @override
@@ -43,11 +24,17 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   void initState() {
-    for (int i = 0; i < widget.models.length; i++) {
-      checkModels.addAll({widget.models[i]: widget.isModelEnabled(i)});
+    for (int i = 0; i < widget.generationPreferences.models.length; i++) {
+      checkModels.addAll({
+        widget.generationPreferences.models[i]:
+            widget.generationPreferences.isModelEnabled(i)
+      });
     }
-    for (int i = 0; i < widget.samplers.length; i++) {
-      checkSamplers.addAll({widget.samplers[i]: widget.isSamplerEnabled(i)});
+    for (int i = 0; i < widget.generationPreferences.samplers.length; i++) {
+      checkSamplers.addAll({
+        widget.generationPreferences.samplers[i]:
+            widget.generationPreferences.isSamplerEnabled(i)
+      });
     }
 
     super.initState();
@@ -55,7 +42,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final mbit = 5200 / widget.getAutoDuration();
+    final mbit = 5200 / widget.playbackState.getAutoDuration();
     return Scaffold(
       backgroundColor: Colors.black,
       body: Flex(
@@ -74,9 +61,9 @@ class _SettingsPageState extends State<SettingsPage> {
                     children: [
                       const Text('Randomize seed'),
                       Checkbox(
-                        value: widget.getRandomSeed(),
+                        value: widget.generationPreferences.getRandomSeed(),
                         onChanged: (v) => setState(() {
-                          widget.setRandomSeed(v);
+                          widget.generationPreferences.setRandomSeed(v);
                         }),
                       ),
                     ],
@@ -88,9 +75,9 @@ class _SettingsPageState extends State<SettingsPage> {
                     children: [
                       const Text('Upscale images'),
                       Checkbox(
-                        value: widget.getUpscale(),
+                        value: widget.generationPreferences.getUpscale(),
                         onChanged: (v) => setState(() {
-                          widget.setUpscale(v);
+                          widget.generationPreferences.setUpscale(v);
                         }),
                       ),
                     ],
@@ -101,15 +88,16 @@ class _SettingsPageState extends State<SettingsPage> {
                   child: Column(
                     children: [
                       Text(
-                          'Autoplay duration (msec): ${widget.getAutoDuration()} at ${mbit.toStringAsFixed(2)} MBIT'),
+                          'Autoplay duration (msec): ${widget.playbackState.getAutoDuration()} at ${mbit.toStringAsFixed(2)} MBIT'),
                       Slider.adaptive(
                           divisions: 59950,
                           min: 50,
                           max: 60000,
-                          value: widget.getAutoDuration().toDouble(),
+                          value:
+                              widget.playbackState.getAutoDuration().toDouble(),
                           onChanged: (v) {
                             setState(() {
-                              widget.setAutoDuration(v.toInt());
+                              widget.playbackState.setAutoDuration(v.toInt());
                             });
                           })
                     ],
@@ -150,8 +138,11 @@ class _SettingsPageState extends State<SettingsPage> {
                                 setState(() {
                                   if (value != null) {
                                     checkModels[key] = value;
-                                    final index = widget.models.indexOf(key);
-                                    widget.toggleModel(index);
+                                    final index = widget
+                                        .generationPreferences.models
+                                        .indexOf(key);
+                                    widget.generationPreferences
+                                        .toggleModel(index);
                                   }
                                 });
                               },
@@ -178,8 +169,11 @@ class _SettingsPageState extends State<SettingsPage> {
                                 setState(() {
                                   if (value != null) {
                                     checkSamplers[key] = value;
-                                    final index = widget.samplers.indexOf(key);
-                                    widget.toggleSampler(index);
+                                    final index = widget
+                                        .generationPreferences.samplers
+                                        .indexOf(key);
+                                    widget.generationPreferences
+                                        .toggleSampler(index);
                                   }
                                 });
                               },

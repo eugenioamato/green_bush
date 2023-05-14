@@ -14,12 +14,6 @@ class ActionsWidget extends StatefulWidget {
   final Function refreshCallback;
   final Function multispanCallback;
   final Orientation orientation;
-  final Function isModelEnabled;
-  final Function toggleModel;
-  final List<String> models;
-  final List<String> samplers;
-  final Function isSamplerEnabled;
-  final Function toggleSampler;
 
   const ActionsWidget({
     Key? key,
@@ -28,12 +22,6 @@ class ActionsWidget extends StatefulWidget {
     required this.refreshCallback,
     required this.multispanCallback,
     required this.orientation,
-    required this.isModelEnabled,
-    required this.toggleModel,
-    required this.models,
-    required this.samplers,
-    required this.isSamplerEnabled,
-    required this.toggleSampler,
     required this.generationPreferences,
     required this.systemPreferences,
     required this.playbackState,
@@ -71,24 +59,9 @@ class _ActionsWidgetState extends State<ActionsWidget> {
                               .push(MaterialPageRoute(builder: (_) {
                             return SettingsPage(
                               systemPreferences: widget.systemPreferences,
-                              getRandomSeed:
-                                  widget.generationPreferences.getRandomSeed,
-                              setRandomSeed:
-                                  widget.generationPreferences.setRandomSeed,
-                              isModelEnabled: widget.isModelEnabled,
-                              toggleModel: widget.toggleModel,
-                              models: widget.models,
-                              samplers: widget.samplers,
-                              toggleSampler: widget.toggleSampler,
-                              isSamplerEnabled: widget.isSamplerEnabled,
-                              getAutoDuration:
-                                  widget.playbackState.getAutoDuration,
-                              setAutoDuration:
-                                  widget.playbackState.setAutoDuration,
-                              getUpscale:
-                                  widget.generationPreferences.getUpscale,
-                              setUpscale:
-                                  widget.generationPreferences.setUpscale,
+                              generationPreferences:
+                                  widget.generationPreferences,
+                              playbackState: widget.playbackState,
                             );
                           }));
                         },
