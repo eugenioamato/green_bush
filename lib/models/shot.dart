@@ -1,9 +1,7 @@
-import 'package:flutter/material.dart';
-
 class Shot implements Comparable<Shot> {
-  Shot(this.id, this.url, this.prompt, this.nprompt, this.cfg, this.steps,
-      this.seed, this.method, this.sampler, this.image);
-
+  const Shot(this.id, this.url, this.prompt, this.nprompt, this.cfg, this.steps,
+      this.seed, this.model, this.sampler, this.index);
+  final int index;
   final String id;
   final String prompt;
   final String nprompt;
@@ -11,16 +9,15 @@ class Shot implements Comparable<Shot> {
   final int cfg;
   final int steps;
   final int seed;
-  final int method;
+  final int model;
   final int sampler;
-  Image? image;
 
   @override
   int compareTo(Shot other) {
     if (prompt == other.prompt) {
       if (nprompt == other.nprompt) {
         if (seed == other.seed) {
-          if (method == other.method) {
+          if (model == other.model) {
             if (sampler == other.sampler) {
               if (cfg == other.cfg) {
                 if (steps == other.steps) {
@@ -35,7 +32,7 @@ class Shot implements Comparable<Shot> {
               return sampler.compareTo(other.sampler);
             }
           } else {
-            return method.compareTo(other.method);
+            return model.compareTo(other.model);
           }
         } else {
           return seed.compareTo(other.seed);

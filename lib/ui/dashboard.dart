@@ -36,12 +36,14 @@ class _DashboardState extends State<Dashboard> {
   late final PlaybackState playbackState;
   late final TxtToImage txtToImage;
   late final String apiKey;
+  late final String apiName;
 
   @override
   void initState() {
     apiKey = const String.fromEnvironment('API_KEY');
+    apiName = const String.fromEnvironment('API_NAME');
 
-    imageRepository = ImageRepository(systemPreferences);
+    imageRepository = ImageRepository(systemPreferences, refresh);
     playbackState = PlaybackState(imageRepository, systemPreferences);
     txtToImage = TxtToImage(playbackState, imageRepository, focusNode,
         systemPreferences, generationPreferences);
@@ -83,6 +85,7 @@ class _DashboardState extends State<Dashboard> {
               ? 1
               : (imageRepository.getSrc().length) - 1;
           final totalThreads = systemPreferences.getActiveThreads();
+          final totalDownloads = systemPreferences.getActiveDownloads();
           if (orientation == Orientation.landscape) {
             return Flex(
               direction: Axis.vertical,
@@ -96,8 +99,6 @@ class _DashboardState extends State<Dashboard> {
                         child: CarouselWidget(
                           playbackState: playbackState,
                           imageRepository: imageRepository,
-                          precache: imageRepository.poolprecache,
-                          getPrecaching: imageRepository.getPrecaching,
                           focusNode: focusNode,
                           carouselController: carouselController,
                           refresh: refresh,
@@ -120,8 +121,7 @@ class _DashboardState extends State<Dashboard> {
                       ),
                       Align(
                           alignment: const Alignment(0.95, -0.85),
-                          child: Text(
-                              '$totalThreads/${systemPreferences.maxThreads}/${systemPreferences.maxDownloads}')
+                          child: Text('$totalThreads/$totalDownloads')
                           //color: (Colors.green),
                           ),
                       ((imageRepository.getSrc().isNotEmpty) &&
@@ -130,7 +130,7 @@ class _DashboardState extends State<Dashboard> {
                           ? Align(
                               alignment: const Alignment(0, 0.90),
                               child: Text(
-                                '${createLabel(imageRepository.getSrc()[playbackState.getPage()])}',
+                                '${createLabel(imageRepository.getShot(playbackState.getPage()))}',
                                 textAlign: TextAlign.center,
                               )
                               //color: (Colors.green),
@@ -270,8 +270,6 @@ class _DashboardState extends State<Dashboard> {
                   child: CarouselWidget(
                     imageRepository: imageRepository,
                     playbackState: playbackState,
-                    precache: imageRepository.precache,
-                    getPrecaching: imageRepository.getPrecaching,
                     focusNode: focusNode,
                     carouselController: carouselController,
                     refresh: refresh,
@@ -314,6 +312,6 @@ class _DashboardState extends State<Dashboard> {
   }
 
   createLabel(Shot s) {
-    return '${s.seed} ${generationPreferences.models[s.method]} ${generationPreferences.samplers[s.sampler]} ${s.cfg} ${s.steps}';
+    return '${s.seed} ${generationPreferences.models[s.model]} ${generationPreferences.samplers[s.sampler]} ${s.cfg} ${s.steps}';
   }
 }

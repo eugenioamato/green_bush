@@ -11,8 +11,6 @@ class CarouselWidget extends StatefulWidget {
   final FocusNode focusNode;
   final CarouselController carouselController;
   final ImageRepository imageRepository;
-  final Function precache;
-  final Function getPrecaching;
   final Function refresh;
   final KeyboardManager keyboardManager;
 
@@ -20,8 +18,6 @@ class CarouselWidget extends StatefulWidget {
     Key? key,
     required this.focusNode,
     required this.carouselController,
-    required this.precache,
-    required this.getPrecaching,
     required this.refresh,
     required this.playbackState,
     required this.keyboardManager,
@@ -42,13 +38,13 @@ class _CarouselWidgetState extends State<CarouselWidget> {
           widget.keyboardManager.manageKeyEvent(event, widget.refresh),
       child: IntrinsicHeight(
         child: CarouselSlider(
-          items: widget.imageRepository
-              .getSrc()
+          items: List.generate(widget.imageRepository.getLen(), (v) => v)
               .map((e) => th.Thumb(
-                    shot: e,
+                    imageRepository: widget.imageRepository,
+                    shot: widget.imageRepository.getShot(e),
                     setAuto: widget.playbackState.setAuto,
-                    precache: widget.precache,
-                    getPrecaching: widget.getPrecaching,
+                    precache: widget.imageRepository.poolprecache,
+                    getPrecaching: widget.imageRepository.getPrecaching,
                     refresh: widget.refresh,
                     playbackState: widget.playbackState,
                   ))

@@ -28,18 +28,23 @@ class TxtToImage {
     this.generationPreferences,
   ) {
     pool = Pool(systemPreferences.maxThreads,
-        timeout: const Duration(seconds: 21));
+        timeout: const Duration(seconds: 60));
   }
 
   final Dio dio = Dio();
 
-  void startGeneration(prompt, nprompt, model, sampler, cfg, steps, seed,
-      upscale, apiKey, setState) async {
+  void startGeneration(int index, prompt, nprompt, model, sampler, cfg, steps,
+      seed, upscale, apiKey, setState, repeatIndex) async {
+    if (repeatIndex > 3) {
+      return;
+    }
     if (kDebugMode) {
       print('starting from $prompt');
     }
     systemPreferences.activeThreads++;
-
+    final placeholderShot = Shot(index.toString(), '', prompt, nprompt, cfg,
+        steps, seed, model, sampler, index);
+    imageRepository.addShot(index, placeholderShot);
     final data = <String, dynamic>{
       "model": generationPreferences.models[model],
       "prompt": prompt,
@@ -52,20 +57,29 @@ class TxtToImage {
       "upscale": upscale,
     };
     final str = jsonEncode(data);
+    final Response<dynamic> result;
 
-    final result = await dio.post("https://api.prodia.com/v1/job",
-        data: str,
-        options: Options(headers: {
-          "X-Prodia-Key": apiKey,
-          'accept': 'application/json',
-          'content-type': 'application/json'
-        }));
+    try {
+      result = await dio.post("https://api.prodia.com/v1/job",
+          data: str,
+          options: Options(headers: {
+            "X-Prodia-Key": apiKey,
+            'accept': 'application/json',
+            'content-type': 'application/json'
+          }));
+    } on Exception catch (e) {
+      if (kDebugMode) {
+        print('error on job creation \n$e');
+      }
+      eraseOrRedo(placeholderShot, setState, apiKey, repeatIndex, upscale);
+      return;
+    }
 
     final resp = jsonDecode(result.toString());
     final String job = resp['job'];
     final earlyShot =
-        Shot(job, '', prompt, nprompt, cfg, steps, seed, model, sampler, null);
-    imageRepository.getSrc().add(earlyShot);
+        Shot(job, '', prompt, nprompt, cfg, steps, seed, model, sampler, index);
+    imageRepository.addShot(index, earlyShot);
 
     String url = '';
     Future.delayed(const Duration(seconds: 10));
@@ -81,20 +95,9 @@ class TxtToImage {
             }));
       } on Exception catch (e) {
         if (kDebugMode) {
-          print('error during job creation : $e');
+          print('error during job retrieving : $e');
         }
-        var index = -1;
-        for (int i = 0; i < imageRepository.getSrc().length; i++) {
-          if (imageRepository.getSrc()[i].id == job) {
-            index = i;
-            break;
-          }
-        }
-
-        if (index == -1) return;
-        imageRepository.getSrc().removeAt(index);
-        systemPreferences.totalrenders--;
-        systemPreferences.activeThreads--;
+        eraseOrRedo(placeholderShot, setState, apiKey, repeatIndex, upscale);
         return;
       }
 
@@ -102,24 +105,12 @@ class TxtToImage {
       if (resp2.containsKey('imageUrl')) {
         url = resp2['imageUrl'];
       } else {
-        if ((r > 25) || (resp2['status'] == 'failed')) {
-          var index = -1;
-          for (int i = 0; i < imageRepository.getSrc().length; i++) {
-            if (imageRepository.getSrc()[i].id == job) {
-              index = i;
-              break;
-            }
-          }
-          if (index == -1) return;
-          if (playbackState.getPage() >= index) {
-            playbackState.setPage(playbackState.getPage() - 1, () {});
-          }
-          imageRepository.getSrc().removeAt(index);
-          systemPreferences.totalrenders--;
-          systemPreferences.activeThreads--;
+        if ((resp2['status'] == 'failed') ||
+            ((r > 25) && (resp2['status'] != 'queued'))) {
           if (kDebugMode) {
             print('failed job with:\n$resp2');
           }
+          eraseOrRedo(placeholderShot, setState, apiKey, repeatIndex, upscale);
           return;
         }
         await Future.delayed(const Duration(seconds: 1));
@@ -130,23 +121,10 @@ class TxtToImage {
       }
     } while (url.isEmpty);
 
-    final updatedShot =
-        Shot(job, url, prompt, nprompt, cfg, steps, seed, model, sampler, null);
-    var index = -1;
-    for (int i = 0; i < imageRepository.getSrc().length; i++) {
-      if (imageRepository.getSrc()[i].id == job) {
-        index = i;
-        break;
-      }
-    }
-    if (index == -1) {
-      if (kDebugMode) {
-        print('Orphaned job $job');
-      }
-      systemPreferences.activeThreads--;
-      return;
-    }
-    imageRepository.getSrc()[index] = updatedShot;
+    final updatedShot = Shot(
+        job, url, prompt, nprompt, cfg, steps, seed, model, sampler, index);
+
+    imageRepository.addShot(index, updatedShot);
     final page = playbackState.getPage();
     if (url.isNotEmpty) {
       if ((index - page <= systemPreferences.getRange()) &&
@@ -155,23 +133,26 @@ class TxtToImage {
           imageRepository.poolprecache(updatedShot, playbackState);
         }
       }
-      systemPreferences.activeThreads--;
     }
+    systemPreferences.activeThreads--;
     setState(() {});
   }
 
-  void multiSpan(setState, apiKey, prompt, nprompt) {
+  void eraseOrRedo(Shot s, setState, apiKey, repeatIndex, upscale) {
+    systemPreferences.activeThreads--;
+    startGeneration(s.index, s.prompt, s.nprompt, s.model, s.sampler, s.cfg,
+        s.steps, s.seed, upscale, apiKey, setState, repeatIndex + 1);
+  }
+
+  void multiSpan(setState, apiKey, prompt, nprompt) async {
     playbackState.setAuto(false);
     imageRepository.clearCache();
-    imageRepository.getSrc().clear();
 
     playbackState.setPage(0, () {});
     playbackState.setLoading(0.0);
     focusNode.requestFocus();
     systemPreferences.totalrenders = 0;
-    setState(() {
-      imageRepository.getSrc().clear();
-    });
+    setState(() {});
     playbackState.setPage(0, () {});
 
     var seed = -1;
@@ -182,6 +163,7 @@ class TxtToImage {
     }
 
     final upscale = generationPreferences.getUpscale();
+    int index = 0;
 
     for (int method = 0;
         method < generationPreferences.selectedModels.length;
@@ -198,9 +180,21 @@ class TxtToImage {
                   steps < generationPreferences.stepSliderEValue + 1;
                   steps += 1) {
                 systemPreferences.totalrenders++;
-                pool.withResource(() => startGeneration(prompt, nprompt, method,
-                    sampler, cfg, steps, seed, upscale, apiKey, setState));
-                Future.delayed(const Duration(milliseconds: 250));
+                pool.withResource(() => startGeneration(
+                      index++,
+                      prompt,
+                      nprompt,
+                      method,
+                      sampler,
+                      cfg,
+                      steps,
+                      seed,
+                      upscale,
+                      apiKey,
+                      setState,
+                      0,
+                    ));
+                await Future.delayed(const Duration(milliseconds: 5));
               }
             }
           }

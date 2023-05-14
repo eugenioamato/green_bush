@@ -21,7 +21,7 @@ class KeyboardManager {
   void manageKeyEvent(KeyEvent event, Function refresh) {
     if (event.logicalKey.keyId == 32) {
       playbackState.setAuto(false);
-      Shot shot = imageRepository.getSrc()[playbackState.getPage()];
+      Shot shot = imageRepository.getShot(playbackState.getPage());
       launchUrl(Uri.parse(shot.url), mode: LaunchMode.externalApplication);
     } else if (event.logicalKey.keyId == 115) {
       if (_pressed) {

@@ -4,6 +4,9 @@ class SystemPreferences {
   int activeThreads = 0;
   int totalrenders = 0;
 
+  int activeDownloads = 0;
+  int getActiveDownloads() => activeDownloads;
+
   int getActiveThreads() => activeThreads;
 
   int _range = 30;

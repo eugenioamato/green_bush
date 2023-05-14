@@ -43,7 +43,7 @@ class PlaybackState {
 
   int _page = 0;
   void setPage(int page, Function refresh) {
-    var len = r.getSrc().length;
+    var len = r.getLen();
     if (len == 0) {
       _page = 0;
       return;
@@ -58,14 +58,14 @@ class PlaybackState {
           ((i > (page - p.getRange())) ||
               ((p.getRange() + page > len) &&
                   (i < ((page + p.getRange()) % len))))) {
-        r.poolprecache(r.getSrc()[i], this);
+        r.poolprecache(r.getShot(i), this);
       } else {
-        r.removeFromCache(r.getSrc()[(i)]);
+        r.removeFromCache(r.getShot(i));
       }
     }
 
     updateSecondarySlider();
-    if (r.getSrc()[page].image == null) {
+    if (r.getImage(page) == null) {
       if (getAuto()) {
         setAuto(false);
       }
@@ -78,15 +78,15 @@ class PlaybackState {
   int getPage() => _page;
 
   void updateSecondarySlider() {
-    if (r.getSrc().isEmpty) return;
+    if (r.getLen() == 0) return;
     int k = getPage();
     int j = k;
-    for (int i = getPage(); i < r.getSrc().length; i++) {
-      if (r.getSrc()[i].image == null) break;
+    for (int i = getPage(); i < r.getLen(); i++) {
+      if (r.getImage(i) == null) break;
       k++;
     }
     double result = k - 1.0;
-    if (result != double.nan && result >= 0 && result <= r.getSrc().length) {
+    if (result != double.nan && result >= 0 && result <= r.getLen()) {
       if (kDebugMode) {
         print('setting load to $result');
       }
@@ -94,7 +94,7 @@ class PlaybackState {
     }
     bool complete = true;
     for (int i = 0; i < j; i++) {
-      if (r.getSrc()[i].image == null) {
+      if (r.getImage(i) == null) {
         complete = false;
         break;
       }

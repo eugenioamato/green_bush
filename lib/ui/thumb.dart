@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gif_view/gif_view.dart';
 import 'package:green_bush/models/shot.dart';
+import 'package:green_bush/services/image_repository.dart';
 import 'package:green_bush/services/playback_state.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -9,6 +10,7 @@ class Thumb extends StatefulWidget {
   final Shot shot;
   final Function setAuto;
   final PlaybackState playbackState;
+  final ImageRepository imageRepository;
   final Function precache;
   final Function getPrecaching;
   final Function refresh;
@@ -21,6 +23,7 @@ class Thumb extends StatefulWidget {
     required this.getPrecaching,
     required this.refresh,
     required this.playbackState,
+    required this.imageRepository,
   }) : super(key: key);
 
   @override
@@ -29,14 +32,15 @@ class Thumb extends StatefulWidget {
 
 class _ThumbState extends State<Thumb> {
   void gp() async {
-    if (widget.shot.url.isNotEmpty && widget.shot.image == null) {
+    if (widget.shot.url.isNotEmpty &&
+        widget.imageRepository.getImage(widget.shot.index) == null) {
       if (!widget.getPrecaching().contains(widget.shot.id)) {
         widget.precache(widget.shot, widget.playbackState);
       }
     }
     if (kDebugMode) {
       print(
-          'building ${widget.shot.id}, ${widget.shot.url} ${widget.shot.image.runtimeType} precaching:${widget.getPrecaching().contains(widget.shot.id)} ${widget.getPrecaching()}');
+          'building ${widget.shot.id}, ${widget.shot.url} ${widget.imageRepository.getImage(widget.shot.index).runtimeType} precaching:${widget.getPrecaching().contains(widget.shot.id)} ${widget.getPrecaching()}');
     }
   }
 
@@ -50,11 +54,12 @@ class _ThumbState extends State<Thumb> {
             launchUrl(Uri.parse(widget.shot.url),
                 mode: LaunchMode.externalApplication);
           },
-          child: (widget.shot.url.isEmpty || widget.shot.image == null)
+          child: (widget.shot.url.isEmpty ||
+                  widget.imageRepository.getImage(widget.shot.index) == null)
               ? GifView.asset('assets/images/loading.gif')
               : FittedBox(
                   fit: BoxFit.contain,
-                  child: widget.shot.image,
+                  child: widget.imageRepository.getImage(widget.shot.index),
                 )),
     );
   }
