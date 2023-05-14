@@ -7,6 +7,7 @@ import 'package:green_bush/services/generation_preferences.dart';
 import 'package:green_bush/services/system_preferences.dart';
 import 'package:green_bush/ui/actions_widget.dart';
 import 'package:green_bush/ui/carousel_widget.dart';
+import 'package:green_bush/ui/progress_slider.dart';
 import 'package:green_bush/ui/settings_widget.dart';
 import 'package:pool/pool.dart';
 import 'package:dio/dio.dart';
@@ -14,6 +15,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:wakelock/wakelock.dart';
+
+import '../services/image_repository.dart';
+import '../services/playback_state.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key, required this.title});
@@ -30,14 +34,16 @@ class _DashboardState extends State<Dashboard> {
     ..text = "cartoon, blur";
   CarouselController carouselController = CarouselController();
 
-  GenerationPreferences g = GenerationPreferences();
-  SystemPreferences p = SystemPreferences();
+  GenerationPreferences generationPreferences = GenerationPreferences();
+  SystemPreferences systemPreferences = SystemPreferences();
+  late ImageRepository imageRepository;
+  late PlaybackState playbackState;
 
   var _pressed = false;
   void manageKeyEvent(KeyEvent event) {
     if (event.logicalKey.keyId == 32) {
-      setAuto(false);
-      Shot shot = src[getPage()];
+      playbackState.setAuto(false);
+      Shot shot = imageRepository.src[playbackState.getPage()];
       launchUrl(Uri.parse(shot.url), mode: LaunchMode.externalApplication);
     } else if (event.logicalKey.keyId == 115) {
       if (_pressed) {
@@ -59,7 +65,7 @@ class _DashboardState extends State<Dashboard> {
         _pressed = false;
       } else {
         setState(() {
-          setAuto(!getAuto());
+          playbackState.setAuto(!playbackState.getAuto());
         });
         _pressed = true;
       }
@@ -73,103 +79,35 @@ class _DashboardState extends State<Dashboard> {
     }
   }
 
-  bool _complete = true;
-
-  bool getComplete() => _complete;
-  void setComplete(n) {
-    _complete = n;
-  }
-
   late final String apiKey;
-
-  bool _auto = false;
-  bool getAuto() => _auto;
-  void setAuto(v) => _auto = v;
-
-  double _loading = 0.0;
-  double getLoading() => _loading;
-  void setLoading(double rate) => _loading = rate;
-
-  bool _disableCaching = false;
-  void setDisableCaching(v) {
-    _disableCaching = v;
-  }
-
-  bool getDisableCaching() => _disableCaching;
 
   @override
   void initState() {
     apiKey = const String.fromEnvironment('API_KEY');
+    pool = Pool(systemPreferences.maxThreads,
+        timeout: const Duration(seconds: 21));
+    imageRepository = ImageRepository(systemPreferences);
+    playbackState = PlaybackState(imageRepository, systemPreferences);
     if (kDebugMode) {
       print('API_KEY IS $apiKey');
     }
-    pool = Pool(p.maxThreads, timeout: const Duration(seconds: 21));
-    pool2 = Pool(p.maxDownloads, timeout: const Duration(seconds: 16));
+
     if (Platform.isWindows || Platform.isMacOS) {
-      p.setRange(50);
-      p.maxThreads = 50;
+      systemPreferences.setRange(50);
+      systemPreferences.maxThreads = 50;
     }
     super.initState();
   }
 
-  int _autoDuration = 800;
-  int getAutoDuration() => _autoDuration;
-  void setAutoDuration(n) {
-    if (n < 0 || n > 100000) return;
-    _autoDuration = n;
-  }
-
   int totalrenders = 0;
 
-  int _page = 0;
-  void setPage(page) {
-    var len = src.length;
-    if (len == 0) {
-      _page = 0;
-      return;
-    }
-    int upLimit = page + p.getRange();
-    if (upLimit > len) {
-      upLimit = len;
-    }
-
-    for (int i = 0; i < len; i++) {
-      if ((i < upLimit) &&
-          ((i > (page - p.getRange())) ||
-              ((p.getRange() + page > len) &&
-                  (i < ((page + p.getRange()) % len))))) {
-        pool2.withResource(() => precache(src[i]));
-      } else {
-        removeFromCache(src[(i)]);
-      }
-    }
-
-    updateSecondarySlider();
-    if (src[page].image == null) {
-      if (getAuto()) {
-        setAuto(false);
-      }
-    }
-    setState(() {
-      _page = page;
-    });
-  }
-
-  int getPage() => _page;
-
   FocusNode focusNode = FocusNode();
-  List<Shot> src = [];
 
   @override
   void dispose() {
     controller.dispose();
     controller2.dispose();
-    for (var s in src) {
-      if (s.url.isNotEmpty) {
-        removeFromCache(s);
-      }
-      src.clear();
-    }
+    imageRepository.clearCache();
     Wakelock.disable();
     super.dispose();
   }
@@ -184,8 +122,10 @@ class _DashboardState extends State<Dashboard> {
           if (kDebugMode) {
             print('rebuilding dash');
           }
-          final total = (src.length) < 2 ? 1 : (src.length) - 1;
-          final totalThreads = p.getActiveThreads();
+          final total = (imageRepository.src.length) < 2
+              ? 1
+              : (imageRepository.src.length) - 1;
+          final totalThreads = systemPreferences.getActiveThreads();
           if (orientation == Orientation.landscape) {
             return Flex(
               direction: Axis.vertical,
@@ -197,27 +137,26 @@ class _DashboardState extends State<Dashboard> {
                       Align(
                         alignment: AlignmentDirectional.center,
                         child: CarouselWidget(
-                          src: src,
-                          setPage: setPage,
-                          getPage: getPage,
-                          getAuto: getAuto,
-                          setAuto: setAuto,
-                          precache: poolprecache,
-                          getPrecaching: getPrecaching,
+                          playbackState: playbackState,
+                          src: imageRepository.src,
+                          precache: imageRepository.poolprecache,
+                          getPrecaching: imageRepository.getPrecaching,
                           focusNode: focusNode,
                           carouselController: carouselController,
                           refresh: refresh,
                           manageKeyEvent: manageKeyEvent,
-                          getAutoDuration: getAutoDuration,
                         ),
                       ),
                       Align(
                         alignment: const Alignment(0.95, -0.95),
-                        child: Icon((totalThreads > (p.maxThreads * 0.7))
+                        child: Icon((totalThreads >
+                                (systemPreferences.maxThreads * 0.7))
                             ? Icons.hourglass_full
-                            : (totalThreads > (p.maxThreads * 0.5))
+                            : (totalThreads >
+                                    (systemPreferences.maxThreads * 0.5))
                                 ? Icons.hourglass_bottom
-                                : (totalThreads > (p.maxThreads * 0.1))
+                                : (totalThreads >
+                                        (systemPreferences.maxThreads * 0.1))
                                     ? Icons.hourglass_empty
                                     : Icons.check),
                         //color: (Colors.green),
@@ -225,14 +164,16 @@ class _DashboardState extends State<Dashboard> {
                       Align(
                           alignment: const Alignment(0.95, -0.85),
                           child: Text(
-                              '$totalThreads/${p.maxThreads}/${p.maxDownloads}')
+                              '$totalThreads/${systemPreferences.maxThreads}/${systemPreferences.maxDownloads}')
                           //color: (Colors.green),
                           ),
-                      ((src.isNotEmpty) && (getPage() < src.length))
+                      ((imageRepository.src.isNotEmpty) &&
+                              (playbackState.getPage() <
+                                  imageRepository.src.length))
                           ? Align(
                               alignment: const Alignment(0, 0.90),
                               child: Text(
-                                '${createLabel(src[getPage()])}',
+                                '${createLabel(imageRepository.src[playbackState.getPage()])}',
                                 textAlign: TextAlign.center,
                               )
                               //color: (Colors.green),
@@ -247,11 +188,12 @@ class _DashboardState extends State<Dashboard> {
                               iconSize: 32,
                               onPressed: () {
                                 setState(() {
-                                  setAuto(!getAuto());
+                                  playbackState
+                                      .setAuto(!playbackState.getAuto());
                                 });
                               },
                               icon: Icon(
-                                (getAuto()
+                                (playbackState.getAuto()
                                     ? Icons.pause_circle_outline
                                     : Icons.play_circle),
                                 //color: (Colors.green),
@@ -277,15 +219,14 @@ class _DashboardState extends State<Dashboard> {
                                 child: Card(
                                   color: Colors.black,
                                   child: SettingsWidget(
-                                    systemPreferences: p,
+                                    systemPreferences: systemPreferences,
                                     showActions: true,
                                     orientation: orientation,
                                     refreshCallback: () {
                                       setState(() {});
                                     },
-                                    getAutoDuration: getAutoDuration,
-                                    setAutoDuration: setAutoDuration,
-                                    generationPreferences: g,
+                                    generationPreferences:
+                                        generationPreferences,
                                     controller: controller,
                                     controller2: controller2,
                                     models: models,
@@ -294,9 +235,8 @@ class _DashboardState extends State<Dashboard> {
                                     samplers: samplers,
                                     isSamplerEnabled: isSamplerEnabled,
                                     toggleSampler: toggleSampler,
-                                    setAuto: setAuto,
-                                    getAuto: getAuto,
                                     multispanCallback: _multiSpan,
+                                    playbackState: playbackState,
                                   ),
                                 ),
                               )
@@ -307,7 +247,7 @@ class _DashboardState extends State<Dashboard> {
                       Align(
                         alignment: const Alignment(0, 0.75),
                         child: Text(
-                          '${getPage() + 1} / ${src.length} / $totalrenders',
+                          '${playbackState.getPage() + 1} / ${imageRepository.src.length} / $totalrenders',
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
                       ),
@@ -318,29 +258,11 @@ class _DashboardState extends State<Dashboard> {
                   child: KeyboardListener(
                     onKeyEvent: manageKeyEvent,
                     focusNode: focusNode,
-                    child: Slider(
-                      secondaryTrackValue: getLoading(),
-                      secondaryActiveColor: Colors.lightGreen,
-                      divisions: total,
-                      thumbColor: Colors.green,
-                      inactiveColor: Colors.yellow.withOpacity(0.2),
-                      activeColor: getComplete()
-                          ? Colors.lightGreen
-                          : Colors.yellow.withOpacity(0.2),
-                      value: (getPage() > total
-                          ? 1.0
-                          : getPage().toDouble() / total),
-                      onChangeStart: (newPage) {
-                        setAuto(false);
-                        setDisableCaching(true);
-                      },
-                      onChangeEnd: (newPage) {
-                        setDisableCaching(false);
-                        setPage(getPage());
-                      },
-                      onChanged: (double value) {
-                        carouselController.jumpToPage((value * total).toInt());
-                      },
+                    child: ProgressSlider(
+                      playbackState: playbackState,
+                      carouselController: carouselController,
+                      total: total,
+                      refresh: refresh,
                     ),
                   ),
                 ),
@@ -354,8 +276,8 @@ class _DashboardState extends State<Dashboard> {
                 Flexible(
                     flex: 6,
                     child: ActionsWidget(
-                      systemPreferences: p,
-                      generationPreferences: g,
+                      systemPreferences: systemPreferences,
+                      generationPreferences: generationPreferences,
                       controller2: controller2,
                       controller: controller,
                       orientation: orientation,
@@ -363,22 +285,19 @@ class _DashboardState extends State<Dashboard> {
                       refreshCallback: () {
                         setState(() {});
                       },
-                      getAutoDuration: getAutoDuration,
-                      setAutoDuration: setAutoDuration,
-                      setAuto: setAuto,
-                      getAuto: getAuto,
                       isModelEnabled: isModelEnabled,
                       toggleModel: toggleModel,
                       models: models,
                       samplers: samplers,
                       isSamplerEnabled: isSamplerEnabled,
                       toggleSampler: toggleSampler,
+                      playbackState: playbackState,
                     )),
                 Flexible(
                     child: Align(
                   alignment: Alignment.bottomCenter,
                   child: Text(
-                    '${getPage()} / ${src.length} / $totalrenders',
+                    '${playbackState.getPage()} / ${imageRepository.src.length} / $totalrenders',
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 )),
@@ -388,7 +307,7 @@ class _DashboardState extends State<Dashboard> {
                     thumbColor: Colors.green,
                     inactiveColor: Colors.yellow.withOpacity(0.2),
                     activeColor: Colors.yellow.withOpacity(0.2),
-                    value: getPage().toDouble() / total,
+                    value: playbackState.getPage().toDouble() / total,
                     onChanged: (double value) {
                       carouselController.jumpToPage((value * total).toInt());
                     },
@@ -397,31 +316,25 @@ class _DashboardState extends State<Dashboard> {
                 Expanded(
                   flex: 8,
                   child: CarouselWidget(
-                    src: src,
-                    getAuto: getAuto,
-                    setPage: setPage,
-                    getPage: getPage,
-                    setAuto: setAuto,
-                    precache: precache,
-                    getPrecaching: getPrecaching,
+                    src: imageRepository.src,
+                    playbackState: playbackState,
+                    precache: imageRepository.precache,
+                    getPrecaching: imageRepository.getPrecaching,
                     focusNode: focusNode,
                     carouselController: carouselController,
                     refresh: refresh,
                     manageKeyEvent: manageKeyEvent,
-                    getAutoDuration: getAutoDuration,
                   ),
                 ),
                 Expanded(
                   flex: 5,
                   child: SettingsWidget(
-                    systemPreferences: p,
+                    systemPreferences: systemPreferences,
                     orientation: orientation,
                     showActions: false,
                     refreshCallback: () {
                       setState(() {});
                     },
-                    getAutoDuration: getAutoDuration,
-                    setAutoDuration: setAutoDuration,
                     controller: controller,
                     controller2: controller2,
                     models: models,
@@ -430,10 +343,9 @@ class _DashboardState extends State<Dashboard> {
                     samplers: samplers,
                     isSamplerEnabled: isSamplerEnabled,
                     toggleSampler: toggleSampler,
-                    setAuto: setAuto,
-                    getAuto: getAuto,
                     multispanCallback: _multiSpan,
-                    generationPreferences: g,
+                    generationPreferences: generationPreferences,
+                    playbackState: playbackState,
                   ),
                 ),
               ],
@@ -452,7 +364,7 @@ class _DashboardState extends State<Dashboard> {
       print('starting from ${controller.text}');
     }
     setState(() {
-      p.activeThreads++;
+      systemPreferences.activeThreads++;
     });
 
     final data = <String, dynamic>{
@@ -480,7 +392,7 @@ class _DashboardState extends State<Dashboard> {
     final String job = resp['job'];
     final earlyShot =
         Shot(job, '', prompt, nprompt, cfg, steps, seed, method, sampler, null);
-    src.add(earlyShot);
+    imageRepository.src.add(earlyShot);
     setState(() {});
 
     String url = '';
@@ -500,17 +412,17 @@ class _DashboardState extends State<Dashboard> {
           print('error during job creation : $e');
         }
         var index = -1;
-        for (int i = 0; i < src.length; i++) {
-          if (src[i].id == job) {
+        for (int i = 0; i < imageRepository.src.length; i++) {
+          if (imageRepository.src[i].id == job) {
             index = i;
             break;
           }
         }
 
         if (index == -1) return;
-        src.removeAt(index);
+        imageRepository.src.removeAt(index);
         totalrenders--;
-        p.activeThreads--;
+        systemPreferences.activeThreads--;
         setState(() {});
         return;
       }
@@ -521,17 +433,19 @@ class _DashboardState extends State<Dashboard> {
       } else {
         if ((r > 3) || (resp2['status'] == 'failed')) {
           var index = -1;
-          for (int i = 0; i < src.length; i++) {
-            if (src[i].id == job) {
+          for (int i = 0; i < imageRepository.src.length; i++) {
+            if (imageRepository.src[i].id == job) {
               index = i;
               break;
             }
           }
           if (index == -1) return;
-          if (getPage() >= index) carouselController.previousPage();
-          src.removeAt(index);
+          if (playbackState.getPage() >= index) {
+            carouselController.previousPage();
+          }
+          imageRepository.src.removeAt(index);
           totalrenders--;
-          p.activeThreads--;
+          systemPreferences.activeThreads--;
           if (kDebugMode) {
             print('failed job with:\n$resp2');
           }
@@ -549,8 +463,8 @@ class _DashboardState extends State<Dashboard> {
     final updatedShot = Shot(
         job, url, prompt, nprompt, cfg, steps, seed, method, sampler, null);
     var index = -1;
-    for (int i = 0; i < src.length; i++) {
-      if (src[i].id == job) {
+    for (int i = 0; i < imageRepository.src.length; i++) {
+      if (imageRepository.src[i].id == job) {
         index = i;
         break;
       }
@@ -559,102 +473,21 @@ class _DashboardState extends State<Dashboard> {
       if (kDebugMode) {
         print('Orphaned job $job');
       }
-      p.activeThreads--;
+      systemPreferences.activeThreads--;
       return;
     }
-    src[index] = updatedShot;
-    final page = getPage();
+    imageRepository.src[index] = updatedShot;
+    final page = playbackState.getPage();
     if (url.isNotEmpty) {
-      if ((index - page <= p.getRange()) && (index - page >= 0)) {
-        if (!getPrecaching().contains(job)) {
-          pool2.withResource(() => precache(updatedShot));
+      if ((index - page <= systemPreferences.getRange()) &&
+          (index - page >= 0)) {
+        if (!imageRepository.getPrecaching().contains(job)) {
+          imageRepository.poolprecache(updatedShot, playbackState);
         }
       }
-      p.activeThreads--;
+      systemPreferences.activeThreads--;
       setState(() {});
     }
-  }
-
-  void removeFromCache(Shot s) {
-    if (s.image != null) {
-      s.image?.image.evict();
-      s.image = null;
-    }
-  }
-
-  Set<String> precaching = {};
-  Set<String> getPrecaching() => precaching;
-
-  void poolprecache(Shot s) {
-    pool2.withResource(() => precache(s));
-  }
-
-  void precache(Shot s) {
-    if (precaching.length > p.maxDownloads) return;
-    if (s.image != null) return;
-    final url = s.url;
-    if (url.isEmpty) return;
-    if (getDisableCaching()) {
-      if (kDebugMode) {
-        print('disabled precaching, stopped ${s.id}');
-      }
-      return;
-    }
-
-    if ((getPrecaching().contains(s.id))) return;
-
-    getPrecaching().add(s.id);
-    if (kDebugMode) {
-      print('starting precache ${s.id}');
-    }
-    p.activeThreads++;
-    late final Image image;
-    try {
-      image = Image(
-        image: Image.network(
-          url,
-        ).image,
-      );
-    } on Exception catch (e) {
-      if (kDebugMode) {
-        print('error creating image $e');
-      }
-      p.activeThreads--;
-      return;
-    }
-
-    try {
-      image.image
-          .resolve(const ImageConfiguration())
-          .addListener(ImageStreamListener((_, __) {
-            if (kDebugMode) {
-              final bytes =
-                  PaintingBinding.instance.imageCache.currentSizeBytes;
-              final maxbytes =
-                  PaintingBinding.instance.imageCache.maximumSizeBytes;
-
-              print(':: $bytes / $maxbytes');
-            }
-            getPrecaching().remove(s.id);
-            if (kDebugMode) {
-              print('ending    precache ${s.id} ${getPrecaching()} }');
-            }
-            updateSecondarySlider();
-          }, onError: (e, stack) {
-            if (kDebugMode) {
-              print('error on listener $e $stack');
-            }
-          }));
-    } on Exception catch (e) {
-      if (kDebugMode) {
-        print('error resolving image $e');
-      }
-      getPrecaching().remove(s.id);
-      p.activeThreads--;
-      return;
-    }
-    p.activeThreads--;
-    s.image = image;
   }
 
   final models = [
@@ -723,41 +556,39 @@ class _DashboardState extends State<Dashboard> {
   }
 
   late final Pool pool;
-  late final Pool pool2;
 
   void _multiSpan() {
-    setAuto(false);
+    playbackState.setAuto(false);
+    imageRepository.clearCache();
+    imageRepository.src.clear();
     carouselController.jumpToPage(0);
     focusNode.requestFocus();
-    for (var s in src) {
-      removeFromCache(s);
-    }
     totalrenders = 0;
     setState(() {
-      src.clear();
+      imageRepository.src.clear();
     });
     carouselController.jumpToPage(0);
 
     var prompt = controller.text;
     var nprompt = controller2.text;
     var seed = -1;
-    if (!g.getRandomSeed()) {
+    if (!generationPreferences.getRandomSeed()) {
       if (seed == -1) {
         seed = Random().nextInt(199999999);
       }
     }
 
-    final upscale = g.getUpscale();
+    final upscale = generationPreferences.getUpscale();
 
     for (int method = 0; method < selectedModels.length; method++) {
       if (selectedModels[method]) {
         for (int sampler = 0; sampler < samplers.length; sampler++) {
           if (selectedSamplers[sampler]) {
-            for (int cfg = g.cfgSliderValue.toInt();
-                cfg < g.cfgSliderEValue + 1;
+            for (int cfg = generationPreferences.cfgSliderValue.toInt();
+                cfg < generationPreferences.cfgSliderEValue + 1;
                 cfg++) {
-              for (int steps = g.stepSliderValue.toInt();
-                  steps < g.stepSliderEValue + 1;
+              for (int steps = generationPreferences.stepSliderValue.toInt();
+                  steps < generationPreferences.stepSliderEValue + 1;
                   steps += 1) {
                 totalrenders++;
                 pool.withResource(() => _startGeneration(prompt, nprompt,
@@ -771,34 +602,10 @@ class _DashboardState extends State<Dashboard> {
     }
   }
 
-  void updateSecondarySlider() {
-    int k = getPage();
-    int j = k;
-    for (int i = getPage(); i < src.length; i++) {
-      if (src[i].image == null) break;
-      k++;
-    }
-    setLoading(k / src.length);
-    bool complete = true;
-    for (int i = 0; i < j; i++) {
-      if (src[i].image == null) {
-        complete = false;
-        break;
-      }
-    }
-    if (complete) {
-      setComplete(true);
-    } else {
-      setComplete(false);
-    }
-
+  refresh() {
     if (mounted) {
       setState(() {});
     }
-  }
-
-  refresh() {
-    setState(() {});
   }
 
   createLabel(Shot s) {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:green_bush/services/generation_preferences.dart';
+import 'package:green_bush/services/playback_state.dart';
 import 'package:green_bush/services/system_preferences.dart';
 
 import 'actions_widget.dart';
@@ -7,6 +8,7 @@ import 'actions_widget.dart';
 class SettingsWidget extends StatefulWidget {
   final GenerationPreferences generationPreferences;
   final SystemPreferences systemPreferences;
+  final PlaybackState playbackState;
   final bool showActions;
   final Orientation orientation;
   final TextEditingController controller;
@@ -19,17 +21,11 @@ class SettingsWidget extends StatefulWidget {
   final Function toggleSampler;
   final Function refreshCallback;
   final Function multispanCallback;
-  final Function setAuto;
-  final Function getAuto;
-  final Function getAutoDuration;
-  final Function setAutoDuration;
 
   const SettingsWidget({
     Key? key,
     required this.refreshCallback,
     required this.multispanCallback,
-    required this.setAuto,
-    required this.getAuto,
     required this.controller,
     required this.controller2,
     required this.showActions,
@@ -40,10 +36,9 @@ class SettingsWidget extends StatefulWidget {
     required this.samplers,
     required this.isSamplerEnabled,
     required this.toggleSampler,
-    required this.getAutoDuration,
-    required this.setAutoDuration,
     required this.generationPreferences,
     required this.systemPreferences,
+    required this.playbackState,
   }) : super(key: key);
 
   @override
@@ -150,6 +145,7 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                 child: ActionsWidget(
                   generationPreferences: widget.generationPreferences,
                   systemPreferences: widget.systemPreferences,
+                  playbackState: widget.playbackState,
                   isModelEnabled: widget.isModelEnabled,
                   toggleModel: widget.toggleModel,
                   models: widget.models,
@@ -158,13 +154,9 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                   orientation: widget.orientation,
                   multispanCallback: widget.multispanCallback,
                   refreshCallback: widget.refreshCallback,
-                  setAuto: widget.setAuto,
-                  getAuto: widget.getAuto,
                   samplers: widget.samplers,
                   isSamplerEnabled: widget.isSamplerEnabled,
                   toggleSampler: widget.toggleSampler,
-                  getAutoDuration: widget.getAutoDuration,
-                  setAutoDuration: widget.setAutoDuration,
                 )),
         ],
       ),

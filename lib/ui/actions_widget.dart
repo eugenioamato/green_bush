@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:green_bush/services/generation_preferences.dart';
+import 'package:green_bush/services/playback_state.dart';
 import 'package:green_bush/services/system_preferences.dart';
 import 'package:green_bush/ui/prompt_widget.dart';
 import 'package:green_bush/ui/settings_page.dart';
@@ -9,10 +10,9 @@ class ActionsWidget extends StatefulWidget {
   final TextEditingController controller2;
   final SystemPreferences systemPreferences;
   final GenerationPreferences generationPreferences;
+  final PlaybackState playbackState;
   final Function refreshCallback;
   final Function multispanCallback;
-  final Function setAuto;
-  final Function getAuto;
   final Orientation orientation;
   final Function isModelEnabled;
   final Function toggleModel;
@@ -20,8 +20,6 @@ class ActionsWidget extends StatefulWidget {
   final List<String> samplers;
   final Function isSamplerEnabled;
   final Function toggleSampler;
-  final Function getAutoDuration;
-  final Function setAutoDuration;
 
   const ActionsWidget({
     Key? key,
@@ -29,8 +27,6 @@ class ActionsWidget extends StatefulWidget {
     required this.controller2,
     required this.refreshCallback,
     required this.multispanCallback,
-    required this.setAuto,
-    required this.getAuto,
     required this.orientation,
     required this.isModelEnabled,
     required this.toggleModel,
@@ -38,10 +34,9 @@ class ActionsWidget extends StatefulWidget {
     required this.samplers,
     required this.isSamplerEnabled,
     required this.toggleSampler,
-    required this.getAutoDuration,
-    required this.setAutoDuration,
     required this.generationPreferences,
     required this.systemPreferences,
+    required this.playbackState,
   }) : super(key: key);
 
   @override
@@ -71,7 +66,7 @@ class _ActionsWidgetState extends State<ActionsWidget> {
                 Expanded(
                     child: IconButton(
                         onPressed: () {
-                          widget.setAuto(false);
+                          widget.playbackState.setAuto(false);
                           Navigator.of(context)
                               .push(MaterialPageRoute(builder: (_) {
                             return SettingsPage(
@@ -86,8 +81,10 @@ class _ActionsWidgetState extends State<ActionsWidget> {
                               samplers: widget.samplers,
                               toggleSampler: widget.toggleSampler,
                               isSamplerEnabled: widget.isSamplerEnabled,
-                              getAutoDuration: widget.getAutoDuration,
-                              setAutoDuration: widget.setAutoDuration,
+                              getAutoDuration:
+                                  widget.playbackState.getAutoDuration,
+                              setAutoDuration:
+                                  widget.playbackState.setAutoDuration,
                               getUpscale:
                                   widget.generationPreferences.getUpscale,
                               setUpscale:
@@ -96,7 +93,9 @@ class _ActionsWidgetState extends State<ActionsWidget> {
                           }));
                         },
                         icon: Icon(
-                          (widget.getAuto() ? Icons.settings : Icons.settings),
+                          (widget.playbackState.getAuto()
+                              ? Icons.settings
+                              : Icons.settings),
                           color: (Colors.green),
                         ))),
                 Expanded(
