@@ -1,23 +1,19 @@
-import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:green_bush/models/shot.dart';
 import 'package:green_bush/services/generation_preferences.dart';
 import 'package:green_bush/services/system_preferences.dart';
+import 'package:green_bush/services/txt_to_image.dart';
 import 'package:green_bush/ui/actions_widget.dart';
 import 'package:green_bush/ui/carousel_widget.dart';
 import 'package:green_bush/ui/progress_slider.dart';
 import 'package:green_bush/ui/settings_widget.dart';
-import 'package:pool/pool.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:wakelock/wakelock.dart';
-
-import '../services/image_repository.dart';
-import '../services/playback_state.dart';
+import 'package:green_bush/services/image_repository.dart';
+import 'package:green_bush/services/playback_state.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key, required this.title});
@@ -33,11 +29,11 @@ class _DashboardState extends State<Dashboard> {
   TextEditingController controller2 = TextEditingController()
     ..text = "cartoon, blur";
   CarouselController carouselController = CarouselController();
-
   GenerationPreferences generationPreferences = GenerationPreferences();
   SystemPreferences systemPreferences = SystemPreferences();
-  late ImageRepository imageRepository;
-  late PlaybackState playbackState;
+  late final ImageRepository imageRepository;
+  late final PlaybackState playbackState;
+  late final TxtToImage txtToImage;
 
   var _pressed = false;
   void manageKeyEvent(KeyEvent event) {
@@ -84,10 +80,12 @@ class _DashboardState extends State<Dashboard> {
   @override
   void initState() {
     apiKey = const String.fromEnvironment('API_KEY');
-    pool = Pool(systemPreferences.maxThreads,
-        timeout: const Duration(seconds: 21));
+
     imageRepository = ImageRepository(systemPreferences);
     playbackState = PlaybackState(imageRepository, systemPreferences);
+    txtToImage = TxtToImage(playbackState, imageRepository, focusNode,
+        systemPreferences, generationPreferences);
+
     if (kDebugMode) {
       print('API_KEY IS $apiKey');
     }
@@ -227,7 +225,13 @@ class _DashboardState extends State<Dashboard> {
                                         generationPreferences,
                                     controller: controller,
                                     controller2: controller2,
-                                    multispanCallback: _multiSpan,
+                                    multispanCallback: () =>
+                                        txtToImage.multiSpan(
+                                      setState,
+                                      apiKey,
+                                      controller.text,
+                                      controller2.text,
+                                    ),
                                     playbackState: playbackState,
                                   ),
                                 ),
@@ -273,7 +277,12 @@ class _DashboardState extends State<Dashboard> {
                       controller2: controller2,
                       controller: controller,
                       orientation: orientation,
-                      multispanCallback: _multiSpan,
+                      multispanCallback: () => txtToImage.multiSpan(
+                        setState,
+                        apiKey,
+                        controller.text,
+                        controller2.text,
+                      ),
                       refreshCallback: () {
                         setState(() {});
                       },
@@ -317,7 +326,12 @@ class _DashboardState extends State<Dashboard> {
                     },
                     controller: controller,
                     controller2: controller2,
-                    multispanCallback: _multiSpan,
+                    multispanCallback: () => txtToImage.multiSpan(
+                      setState,
+                      apiKey,
+                      controller.text,
+                      controller2.text,
+                    ),
                     generationPreferences: generationPreferences,
                     playbackState: playbackState,
                   ),
@@ -328,192 +342,6 @@ class _DashboardState extends State<Dashboard> {
         }),
       ),
     );
-  }
-
-  Dio dio = Dio();
-
-  void _startGeneration(prompt, nprompt, method, sampler, cfg, steps, seed,
-      upscale, apiKey) async {
-    if (kDebugMode) {
-      print('starting from ${controller.text}');
-    }
-    setState(() {
-      systemPreferences.activeThreads++;
-    });
-
-    final data = <String, dynamic>{
-      "model": generationPreferences.models[method],
-      "prompt": prompt,
-      "negative_prompt": nprompt,
-      "steps": steps,
-      "cfg_scale": cfg,
-      "sampler": generationPreferences.samplers[sampler],
-      "aspect_ratio": "landscape",
-      "seed": seed,
-      "upscale": upscale,
-    };
-    final str = jsonEncode(data);
-
-    final result = await dio.post("https://api.prodia.com/v1/job",
-        data: str,
-        options: Options(headers: {
-          "X-Prodia-Key": apiKey,
-          'accept': 'application/json',
-          'content-type': 'application/json'
-        }));
-
-    final resp = jsonDecode(result.toString());
-    final String job = resp['job'];
-    final earlyShot =
-        Shot(job, '', prompt, nprompt, cfg, steps, seed, method, sampler, null);
-    imageRepository.src.add(earlyShot);
-    setState(() {});
-
-    String url = '';
-    Future.delayed(const Duration(seconds: 5));
-
-    int r = 0;
-    do {
-      Response result2;
-      try {
-        result2 = await dio.get("https://api.prodia.com/v1/job/$job",
-            options: Options(headers: {
-              "X-Prodia-Key": apiKey,
-              'accept': 'application/json',
-            }));
-      } on Exception catch (e) {
-        if (kDebugMode) {
-          print('error during job creation : $e');
-        }
-        var index = -1;
-        for (int i = 0; i < imageRepository.src.length; i++) {
-          if (imageRepository.src[i].id == job) {
-            index = i;
-            break;
-          }
-        }
-
-        if (index == -1) return;
-        imageRepository.src.removeAt(index);
-        systemPreferences.totalrenders--;
-        systemPreferences.activeThreads--;
-        setState(() {});
-        return;
-      }
-
-      final resp2 = jsonDecode(result2.toString());
-      if (resp2.containsKey('imageUrl')) {
-        url = resp2['imageUrl'];
-      } else {
-        if ((r > 3) || (resp2['status'] == 'failed')) {
-          var index = -1;
-          for (int i = 0; i < imageRepository.src.length; i++) {
-            if (imageRepository.src[i].id == job) {
-              index = i;
-              break;
-            }
-          }
-          if (index == -1) return;
-          if (playbackState.getPage() >= index) {
-            carouselController.previousPage();
-          }
-          imageRepository.src.removeAt(index);
-          systemPreferences.totalrenders--;
-          systemPreferences.activeThreads--;
-          if (kDebugMode) {
-            print('failed job with:\n$resp2');
-          }
-          setState(() {});
-          return;
-        }
-        await Future.delayed(const Duration(seconds: 5));
-        if (kDebugMode) {
-          print('retry d:$job r=$r');
-        }
-        r++;
-      }
-    } while (url.isEmpty);
-
-    final updatedShot = Shot(
-        job, url, prompt, nprompt, cfg, steps, seed, method, sampler, null);
-    var index = -1;
-    for (int i = 0; i < imageRepository.src.length; i++) {
-      if (imageRepository.src[i].id == job) {
-        index = i;
-        break;
-      }
-    }
-    if (index == -1) {
-      if (kDebugMode) {
-        print('Orphaned job $job');
-      }
-      systemPreferences.activeThreads--;
-      return;
-    }
-    imageRepository.src[index] = updatedShot;
-    final page = playbackState.getPage();
-    if (url.isNotEmpty) {
-      if ((index - page <= systemPreferences.getRange()) &&
-          (index - page >= 0)) {
-        if (!imageRepository.getPrecaching().contains(job)) {
-          imageRepository.poolprecache(updatedShot, playbackState);
-        }
-      }
-      systemPreferences.activeThreads--;
-      setState(() {});
-    }
-  }
-
-  late final Pool pool;
-
-  void _multiSpan() {
-    playbackState.setAuto(false);
-    imageRepository.clearCache();
-    imageRepository.src.clear();
-    carouselController.jumpToPage(0);
-    playbackState.setLoading(0.0);
-    focusNode.requestFocus();
-    systemPreferences.totalrenders = 0;
-    setState(() {
-      imageRepository.src.clear();
-    });
-    carouselController.jumpToPage(0);
-
-    var prompt = controller.text;
-    var nprompt = controller2.text;
-    var seed = -1;
-    if (!generationPreferences.getRandomSeed()) {
-      if (seed == -1) {
-        seed = Random().nextInt(199999999);
-      }
-    }
-
-    final upscale = generationPreferences.getUpscale();
-
-    for (int method = 0;
-        method < generationPreferences.selectedModels.length;
-        method++) {
-      if (generationPreferences.selectedModels[method]) {
-        for (int sampler = 0;
-            sampler < generationPreferences.samplers.length;
-            sampler++) {
-          if (generationPreferences.selectedSamplers[sampler]) {
-            for (int cfg = generationPreferences.cfgSliderValue.toInt();
-                cfg < generationPreferences.cfgSliderEValue + 1;
-                cfg++) {
-              for (int steps = generationPreferences.stepSliderValue.toInt();
-                  steps < generationPreferences.stepSliderEValue + 1;
-                  steps += 1) {
-                systemPreferences.totalrenders++;
-                pool.withResource(() => _startGeneration(prompt, nprompt,
-                    method, sampler, cfg, steps, seed, upscale, apiKey));
-                Future.delayed(const Duration(milliseconds: 50));
-              }
-            }
-          }
-        }
-      }
-    }
   }
 
   refresh() {

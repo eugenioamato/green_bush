@@ -2,11 +2,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gif_view/gif_view.dart';
 import 'package:green_bush/models/shot.dart';
+import 'package:green_bush/services/playback_state.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class Thumb extends StatefulWidget {
   final Shot shot;
   final Function setAuto;
+  final PlaybackState playbackState;
   final Function precache;
   final Function getPrecaching;
   final Function refresh;
@@ -18,6 +20,7 @@ class Thumb extends StatefulWidget {
     required this.precache,
     required this.getPrecaching,
     required this.refresh,
+    required this.playbackState,
   }) : super(key: key);
 
   @override
@@ -28,7 +31,7 @@ class _ThumbState extends State<Thumb> {
   void gp() async {
     if (widget.shot.url.isNotEmpty && widget.shot.image == null) {
       if (!widget.getPrecaching().contains(widget.shot.id)) {
-        widget.precache(widget.shot);
+        widget.precache(widget.shot, widget.playbackState);
       }
     }
     if (kDebugMode) {

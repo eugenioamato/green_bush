@@ -46,6 +46,7 @@ class _CarouselWidgetState extends State<CarouselWidget> {
                     precache: widget.precache,
                     getPrecaching: widget.getPrecaching,
                     refresh: widget.refresh,
+                    playbackState: widget.playbackState,
                   ))
               .toList(),
           carouselController: widget.carouselController,
