@@ -10,10 +10,10 @@ import 'package:green_bush/ui/progress_slider.dart';
 import 'package:green_bush/ui/settings_widget.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:wakelock/wakelock.dart';
 import 'package:green_bush/services/image_repository.dart';
 import 'package:green_bush/services/playback_state.dart';
+import 'package:green_bush/services/keyboard_manager.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key, required this.title});
@@ -24,57 +24,17 @@ class Dashboard extends StatefulWidget {
 }
 
 class _DashboardState extends State<Dashboard> {
-  TextEditingController controller = TextEditingController()
+  final TextEditingController controller = TextEditingController()
     ..text = "Green bush, awesome, ";
-  TextEditingController controller2 = TextEditingController()
+  final TextEditingController controller2 = TextEditingController()
     ..text = "cartoon, blur";
-  CarouselController carouselController = CarouselController();
-  GenerationPreferences generationPreferences = GenerationPreferences();
-  SystemPreferences systemPreferences = SystemPreferences();
+  final CarouselController carouselController = CarouselController();
+  final GenerationPreferences generationPreferences = GenerationPreferences();
+  final SystemPreferences systemPreferences = SystemPreferences();
+  late final KeyboardManager keyboardManager;
   late final ImageRepository imageRepository;
   late final PlaybackState playbackState;
   late final TxtToImage txtToImage;
-
-  var _pressed = false;
-  void manageKeyEvent(KeyEvent event) {
-    if (event.logicalKey.keyId == 32) {
-      playbackState.setAuto(false);
-      Shot shot = imageRepository.src[playbackState.getPage()];
-      launchUrl(Uri.parse(shot.url), mode: LaunchMode.externalApplication);
-    } else if (event.logicalKey.keyId == 115) {
-      if (_pressed) {
-        _pressed = false;
-      } else {
-        carouselController.nextPage(duration: const Duration(milliseconds: 40));
-        _pressed = true;
-      }
-    } else if (event.logicalKey.keyId == 119) {
-      if (_pressed) {
-        _pressed = false;
-      } else {
-        carouselController.previousPage(
-            duration: const Duration(milliseconds: 40));
-        _pressed = true;
-      }
-    } else if (event.logicalKey.keyId == 100) {
-      if (_pressed) {
-        _pressed = false;
-      } else {
-        setState(() {
-          playbackState.setAuto(!playbackState.getAuto());
-        });
-        _pressed = true;
-      }
-    } else if (event.logicalKey.keyId == 97) {
-      if (_pressed) {
-        _pressed = false;
-      } else {
-        carouselController.jumpToPage(0);
-        _pressed = true;
-      }
-    }
-  }
-
   late final String apiKey;
 
   @override
@@ -85,7 +45,8 @@ class _DashboardState extends State<Dashboard> {
     playbackState = PlaybackState(imageRepository, systemPreferences);
     txtToImage = TxtToImage(playbackState, imageRepository, focusNode,
         systemPreferences, generationPreferences);
-
+    keyboardManager =
+        KeyboardManager(playbackState, imageRepository, carouselController);
     if (kDebugMode) {
       print('API_KEY IS $apiKey');
     }
@@ -118,9 +79,9 @@ class _DashboardState extends State<Dashboard> {
           if (kDebugMode) {
             print('rebuilding dash');
           }
-          final total = (imageRepository.src.length) < 2
+          final total = (imageRepository.getSrc().length) < 2
               ? 1
-              : (imageRepository.src.length) - 1;
+              : (imageRepository.getSrc().length) - 1;
           final totalThreads = systemPreferences.getActiveThreads();
           if (orientation == Orientation.landscape) {
             return Flex(
@@ -134,13 +95,13 @@ class _DashboardState extends State<Dashboard> {
                         alignment: AlignmentDirectional.center,
                         child: CarouselWidget(
                           playbackState: playbackState,
-                          src: imageRepository.src,
+                          imageRepository: imageRepository,
                           precache: imageRepository.poolprecache,
                           getPrecaching: imageRepository.getPrecaching,
                           focusNode: focusNode,
                           carouselController: carouselController,
                           refresh: refresh,
-                          manageKeyEvent: manageKeyEvent,
+                          keyboardManager: keyboardManager,
                         ),
                       ),
                       Align(
@@ -163,13 +124,13 @@ class _DashboardState extends State<Dashboard> {
                               '$totalThreads/${systemPreferences.maxThreads}/${systemPreferences.maxDownloads}')
                           //color: (Colors.green),
                           ),
-                      ((imageRepository.src.isNotEmpty) &&
+                      ((imageRepository.getSrc().isNotEmpty) &&
                               (playbackState.getPage() <
-                                  imageRepository.src.length))
+                                  imageRepository.getSrc().length))
                           ? Align(
                               alignment: const Alignment(0, 0.90),
                               child: Text(
-                                '${createLabel(imageRepository.src[playbackState.getPage()])}',
+                                '${createLabel(imageRepository.getSrc()[playbackState.getPage()])}',
                                 textAlign: TextAlign.center,
                               )
                               //color: (Colors.green),
@@ -178,7 +139,8 @@ class _DashboardState extends State<Dashboard> {
                       Align(
                         alignment: const Alignment(-0.95, 0.95),
                         child: KeyboardListener(
-                          onKeyEvent: manageKeyEvent,
+                          onKeyEvent: (event) =>
+                              keyboardManager.manageKeyEvent(event, refresh),
                           focusNode: focusNode,
                           child: IconButton(
                               iconSize: 32,
@@ -243,7 +205,7 @@ class _DashboardState extends State<Dashboard> {
                       Align(
                         alignment: const Alignment(0, 0.75),
                         child: Text(
-                          '${playbackState.getPage() + 1} / ${imageRepository.src.length} / ${systemPreferences.totalrenders}',
+                          '${playbackState.getPage() + 1} / ${imageRepository.getSrc().length} / ${systemPreferences.totalrenders}',
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
                       ),
@@ -252,7 +214,8 @@ class _DashboardState extends State<Dashboard> {
                 ),
                 Flexible(
                   child: KeyboardListener(
-                    onKeyEvent: manageKeyEvent,
+                    onKeyEvent: (event) =>
+                        keyboardManager.manageKeyEvent(event, refresh),
                     focusNode: focusNode,
                     child: ProgressSlider(
                       playbackState: playbackState,
@@ -292,7 +255,7 @@ class _DashboardState extends State<Dashboard> {
                     child: Align(
                   alignment: Alignment.bottomCenter,
                   child: Text(
-                    '${playbackState.getPage()} / ${imageRepository.src.length} / ${systemPreferences.totalrenders}',
+                    '${playbackState.getPage()} / ${imageRepository.getSrc().length} / ${systemPreferences.totalrenders}',
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 )),
@@ -305,14 +268,14 @@ class _DashboardState extends State<Dashboard> {
                 Expanded(
                   flex: 8,
                   child: CarouselWidget(
-                    src: imageRepository.src,
+                    imageRepository: imageRepository,
                     playbackState: playbackState,
                     precache: imageRepository.precache,
                     getPrecaching: imageRepository.getPrecaching,
                     focusNode: focusNode,
                     carouselController: carouselController,
                     refresh: refresh,
-                    manageKeyEvent: manageKeyEvent,
+                    keyboardManager: keyboardManager,
                   ),
                 ),
                 Expanded(

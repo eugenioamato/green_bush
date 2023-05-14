@@ -65,7 +65,7 @@ class TxtToImage {
     final String job = resp['job'];
     final earlyShot =
         Shot(job, '', prompt, nprompt, cfg, steps, seed, model, sampler, null);
-    imageRepository.src.add(earlyShot);
+    imageRepository.getSrc().add(earlyShot);
 
     String url = '';
     Future.delayed(const Duration(seconds: 10));
@@ -84,15 +84,15 @@ class TxtToImage {
           print('error during job creation : $e');
         }
         var index = -1;
-        for (int i = 0; i < imageRepository.src.length; i++) {
-          if (imageRepository.src[i].id == job) {
+        for (int i = 0; i < imageRepository.getSrc().length; i++) {
+          if (imageRepository.getSrc()[i].id == job) {
             index = i;
             break;
           }
         }
 
         if (index == -1) return;
-        imageRepository.src.removeAt(index);
+        imageRepository.getSrc().removeAt(index);
         systemPreferences.totalrenders--;
         systemPreferences.activeThreads--;
         return;
@@ -104,8 +104,8 @@ class TxtToImage {
       } else {
         if ((r > 25) || (resp2['status'] == 'failed')) {
           var index = -1;
-          for (int i = 0; i < imageRepository.src.length; i++) {
-            if (imageRepository.src[i].id == job) {
+          for (int i = 0; i < imageRepository.getSrc().length; i++) {
+            if (imageRepository.getSrc()[i].id == job) {
               index = i;
               break;
             }
@@ -114,7 +114,7 @@ class TxtToImage {
           if (playbackState.getPage() >= index) {
             playbackState.setPage(playbackState.getPage() - 1, () {});
           }
-          imageRepository.src.removeAt(index);
+          imageRepository.getSrc().removeAt(index);
           systemPreferences.totalrenders--;
           systemPreferences.activeThreads--;
           if (kDebugMode) {
@@ -133,8 +133,8 @@ class TxtToImage {
     final updatedShot =
         Shot(job, url, prompt, nprompt, cfg, steps, seed, model, sampler, null);
     var index = -1;
-    for (int i = 0; i < imageRepository.src.length; i++) {
-      if (imageRepository.src[i].id == job) {
+    for (int i = 0; i < imageRepository.getSrc().length; i++) {
+      if (imageRepository.getSrc()[i].id == job) {
         index = i;
         break;
       }
@@ -146,7 +146,7 @@ class TxtToImage {
       systemPreferences.activeThreads--;
       return;
     }
-    imageRepository.src[index] = updatedShot;
+    imageRepository.getSrc()[index] = updatedShot;
     final page = playbackState.getPage();
     if (url.isNotEmpty) {
       if ((index - page <= systemPreferences.getRange()) &&
@@ -163,14 +163,14 @@ class TxtToImage {
   void multiSpan(setState, apiKey, prompt, nprompt) {
     playbackState.setAuto(false);
     imageRepository.clearCache();
-    imageRepository.src.clear();
+    imageRepository.getSrc().clear();
 
     playbackState.setPage(0, () {});
     playbackState.setLoading(0.0);
     focusNode.requestFocus();
     systemPreferences.totalrenders = 0;
     setState(() {
-      imageRepository.src.clear();
+      imageRepository.getSrc().clear();
     });
     playbackState.setPage(0, () {});
 

@@ -16,7 +16,7 @@ class ImageRepository {
         timeout: const Duration(seconds: 16));
   }
 
-  final List<Shot> src = [];
+  final List<Shot> _src = [];
 
   void removeFromCache(Shot s) {
     if (s.image != null) {
@@ -101,11 +101,13 @@ class ImageRepository {
   }
 
   void clearCache() {
-    for (var s in src) {
+    for (var s in _src) {
       if (s.url.isNotEmpty) {
         removeFromCache(s);
       }
     }
-    src.clear();
+    _src.clear();
   }
+
+  List<Shot> getSrc() => _src;
 }

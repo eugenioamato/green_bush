@@ -1,29 +1,31 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
+import 'package:green_bush/services/keyboard_manager.dart';
 import 'package:green_bush/ui/thumb.dart' as th;
 
+import '../services/image_repository.dart';
 import '../services/playback_state.dart';
 
 class CarouselWidget extends StatefulWidget {
-  final List src;
   final PlaybackState playbackState;
   final FocusNode focusNode;
   final CarouselController carouselController;
+  final ImageRepository imageRepository;
   final Function precache;
   final Function getPrecaching;
-  final void Function(KeyEvent) manageKeyEvent;
   final Function refresh;
+  final KeyboardManager keyboardManager;
 
   const CarouselWidget({
     Key? key,
-    required this.src,
     required this.focusNode,
     required this.carouselController,
     required this.precache,
     required this.getPrecaching,
     required this.refresh,
-    required this.manageKeyEvent,
     required this.playbackState,
+    required this.keyboardManager,
+    required this.imageRepository,
   }) : super(key: key);
 
   @override
@@ -36,10 +38,12 @@ class _CarouselWidgetState extends State<CarouselWidget> {
     return KeyboardListener(
       focusNode: widget.focusNode,
       autofocus: true,
-      onKeyEvent: widget.manageKeyEvent,
+      onKeyEvent: (event) =>
+          widget.keyboardManager.manageKeyEvent(event, widget.refresh),
       child: IntrinsicHeight(
         child: CarouselSlider(
-          items: widget.src
+          items: widget.imageRepository
+              .getSrc()
               .map((e) => th.Thumb(
                     shot: e,
                     setAuto: widget.playbackState.setAuto,
