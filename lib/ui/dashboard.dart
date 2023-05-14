@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:green_bush/models/shot.dart';
+import 'package:green_bush/services/generation_preferences.dart';
 import 'package:green_bush/ui/actions_widget.dart';
 import 'package:green_bush/ui/carousel_widget.dart';
 import 'package:green_bush/ui/settings_widget.dart';
@@ -22,17 +23,15 @@ class Dashboard extends StatefulWidget {
 }
 
 class _DashboardState extends State<Dashboard> {
-  int maxThreads = 50;
   TextEditingController controller = TextEditingController()
     ..text = "Green bush, awesome, ";
   TextEditingController controller2 = TextEditingController()
     ..text = "cartoon, blur";
   CarouselController carouselController = CarouselController();
 
-  int activeThreads = 0;
-  int getActiveThreads() => activeThreads;
-  var _pressed = false;
+  GenerationPreferences g = GenerationPreferences();
 
+  var _pressed = false;
   void manageKeyEvent(KeyEvent event) {
     if (event.logicalKey.keyId == 32) {
       setAuto(false);
@@ -72,24 +71,23 @@ class _DashboardState extends State<Dashboard> {
     }
   }
 
-  int maxDownloads = 25;
-
-  bool _randomSeed = false;
-  bool getRandomSeed() => _randomSeed;
-  void setRandomSeed(v) => setState(() {
-        _randomSeed = v;
-      });
-
   bool _complete = true;
+
   bool getComplete() => _complete;
   void setComplete(n) {
     _complete = n;
   }
 
-  bool _upscale = false;
-  bool getUpscale() => _upscale;
-  void setUpscale(n) {
-    _upscale = n;
+  late final String apiKey;
+  int maxDownloads = 25;
+  int maxThreads = 50;
+  int activeThreads = 0;
+  int getActiveThreads() => activeThreads;
+
+  int _range = 30;
+  int getRange() => _range;
+  void setRange(n) {
+    _range = n;
   }
 
   bool _auto = false;
@@ -99,7 +97,6 @@ class _DashboardState extends State<Dashboard> {
   double _loading = 0.0;
   double getLoading() => _loading;
   void setLoading(double rate) => _loading = rate;
-  late final String apiKey;
 
   bool _disableCaching = false;
   void setDisableCaching(v) {
@@ -131,12 +128,6 @@ class _DashboardState extends State<Dashboard> {
   }
 
   int totalrenders = 0;
-
-  int _range = 30;
-  int getRange() => _range;
-  void setRange(n) {
-    _range = n;
-  }
 
   int _page = 0;
   void setPage(page) {
@@ -173,18 +164,6 @@ class _DashboardState extends State<Dashboard> {
   }
 
   int getPage() => _page;
-
-  double cfgSliderValue = 7;
-  void setCfgSliderValue(v) => cfgSliderValue = v;
-
-  double stepSliderValue = 35;
-  void setStepSliderValue(v) => stepSliderValue = v;
-
-  double cfgSliderEValue = 7;
-  void setCfgSliderEValue(v) => cfgSliderEValue = v;
-
-  double stepSliderEValue = 35;
-  void setStepSliderEValue(v) => stepSliderEValue = v;
 
   FocusNode focusNode = FocusNode();
   List<Shot> src = [];
@@ -256,7 +235,7 @@ class _DashboardState extends State<Dashboard> {
                           child: Text('$totalThreads/$maxThreads/$maxDownloads')
                           //color: (Colors.green),
                           ),
-                      ((src.isNotEmpty) && (getPage()<src.length))
+                      ((src.isNotEmpty) && (getPage() < src.length))
                           ? Align(
                               alignment: const Alignment(0, 0.90),
                               child: Text(
@@ -305,8 +284,6 @@ class _DashboardState extends State<Dashboard> {
                                 child: Card(
                                   color: Colors.black,
                                   child: SettingsWidget(
-                                    getUpscale: getUpscale,
-                                    setUpscale: setUpscale,
                                     showActions: true,
                                     orientation: orientation,
                                     getActiveThreads: getActiveThreads,
@@ -317,8 +294,7 @@ class _DashboardState extends State<Dashboard> {
                                     setRange: setRange,
                                     getAutoDuration: getAutoDuration,
                                     setAutoDuration: setAutoDuration,
-                                    getRandomSeed: getRandomSeed,
-                                    setRandomSeed: setRandomSeed,
+                                    generationPreferences: g,
                                     controller: controller,
                                     controller2: controller2,
                                     models: models,
@@ -327,14 +303,6 @@ class _DashboardState extends State<Dashboard> {
                                     samplers: samplers,
                                     isSamplerEnabled: isSamplerEnabled,
                                     toggleSampler: toggleSampler,
-                                    cfgSliderEValue: cfgSliderEValue,
-                                    setCfgSliderEValue: setCfgSliderEValue,
-                                    cfgSliderValue: cfgSliderValue,
-                                    setCfgSliderValue: setCfgSliderValue,
-                                    stepSliderEValue: stepSliderEValue,
-                                    setStepSliderValue: setStepSliderValue,
-                                    stepSliderValue: stepSliderValue,
-                                    setStepSliderEValue: setStepSliderEValue,
                                     setAuto: setAuto,
                                     getAuto: getAuto,
                                     multispanCallback: _multiSpan,
@@ -369,7 +337,9 @@ class _DashboardState extends State<Dashboard> {
                       activeColor: getComplete()
                           ? Colors.lightGreen
                           : Colors.yellow.withOpacity(0.2),
-                      value: (getPage()>total?1.0:getPage().toDouble() / total),
+                      value: (getPage() > total
+                          ? 1.0
+                          : getPage().toDouble() / total),
                       onChangeStart: (newPage) {
                         setAuto(false);
                         setDisableCaching(true);
@@ -394,6 +364,7 @@ class _DashboardState extends State<Dashboard> {
                 Flexible(
                     flex: 6,
                     child: ActionsWidget(
+                      generationPreferences: g,
                       controller2: controller2,
                       controller: controller,
                       maxThreads: maxThreads,
@@ -403,14 +374,10 @@ class _DashboardState extends State<Dashboard> {
                       refreshCallback: () {
                         setState(() {});
                       },
-                      getUpscale: getUpscale,
-                      setUpscale: setUpscale,
                       getRange: getRange,
                       setRange: setRange,
                       getAutoDuration: getAutoDuration,
                       setAutoDuration: setAutoDuration,
-                      getRandomSeed: getRandomSeed,
-                      setRandomSeed: setRandomSeed,
                       setAuto: setAuto,
                       getAuto: getAuto,
                       isModelEnabled: isModelEnabled,
@@ -465,14 +432,10 @@ class _DashboardState extends State<Dashboard> {
                     refreshCallback: () {
                       setState(() {});
                     },
-                    getUpscale: getUpscale,
-                    setUpscale: setUpscale,
                     getRange: getRange,
                     setRange: setRange,
                     getAutoDuration: getAutoDuration,
                     setAutoDuration: setAutoDuration,
-                    getRandomSeed: getRandomSeed,
-                    setRandomSeed: setRandomSeed,
                     getActiveThreads: getActiveThreads,
                     controller: controller,
                     controller2: controller2,
@@ -482,18 +445,11 @@ class _DashboardState extends State<Dashboard> {
                     samplers: samplers,
                     isSamplerEnabled: isSamplerEnabled,
                     toggleSampler: toggleSampler,
-                    cfgSliderEValue: cfgSliderEValue,
-                    setCfgSliderEValue: setCfgSliderEValue,
-                    cfgSliderValue: cfgSliderValue,
-                    setCfgSliderValue: setCfgSliderValue,
-                    stepSliderEValue: stepSliderEValue,
-                    setStepSliderValue: setStepSliderValue,
-                    stepSliderValue: stepSliderValue,
-                    setStepSliderEValue: setStepSliderEValue,
                     setAuto: setAuto,
                     getAuto: getAuto,
                     multispanCallback: _multiSpan,
                     maxThreads: maxThreads,
+                    generationPreferences: g,
                   ),
                 ),
               ],
@@ -579,11 +535,7 @@ class _DashboardState extends State<Dashboard> {
       if (resp2.containsKey('imageUrl')) {
         url = resp2['imageUrl'];
       } else {
-        await Future.delayed(const Duration(seconds: 5));
-        if (kDebugMode) {
-          print('retry d:$job r=$r');
-        }
-        if (r > 10) {
+        if ((r > 3) || (resp2['status'] == 'failed')) {
           var index = -1;
           for (int i = 0; i < src.length; i++) {
             if (src[i].id == job) {
@@ -592,11 +544,19 @@ class _DashboardState extends State<Dashboard> {
             }
           }
           if (index == -1) return;
+          if (getPage() >= index) carouselController.previousPage();
           src.removeAt(index);
           totalrenders--;
           activeThreads--;
+          if (kDebugMode) {
+            print('failed job with:\n$resp2');
+          }
           setState(() {});
           return;
+        }
+        await Future.delayed(const Duration(seconds: 5));
+        if (kDebugMode) {
+          print('retry d:$job r=$r');
         }
         r++;
       }
@@ -727,7 +687,19 @@ class _DashboardState extends State<Dashboard> {
     "analog-diffusion-1.0.ckpt [9ca13f02]",
   ];
 
-  var selectedModels = [true, false, false, true, true, false, false, false, false,false, false];
+  var selectedModels = [
+    true,
+    false,
+    false,
+    true,
+    true,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+  ];
 
   bool isModelEnabled(n) {
     if ((n < 0) || (n >= models.length)) {
@@ -785,23 +757,23 @@ class _DashboardState extends State<Dashboard> {
     var prompt = controller.text;
     var nprompt = controller2.text;
     var seed = -1;
-    if (!getRandomSeed()) {
+    if (!g.getRandomSeed()) {
       if (seed == -1) {
         seed = Random().nextInt(199999999);
       }
     }
 
-    final upscale = getUpscale();
+    final upscale = g.getUpscale();
 
     for (int method = 0; method < selectedModels.length; method++) {
       if (selectedModels[method]) {
         for (int sampler = 0; sampler < samplers.length; sampler++) {
           if (selectedSamplers[sampler]) {
-            for (int cfg = cfgSliderValue.toInt();
-                cfg < cfgSliderEValue + 1;
+            for (int cfg = g.cfgSliderValue.toInt();
+                cfg < g.cfgSliderEValue + 1;
                 cfg++) {
-              for (int steps = stepSliderValue.toInt();
-                  steps < stepSliderEValue + 1;
+              for (int steps = g.stepSliderValue.toInt();
+                  steps < g.stepSliderEValue + 1;
                   steps += 1) {
                 totalrenders++;
                 pool.withResource(() => _startGeneration(prompt, nprompt,

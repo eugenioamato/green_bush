@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:green_bush/services/generation_preferences.dart';
 
 import 'actions_widget.dart';
 
 class SettingsWidget extends StatefulWidget {
+  final GenerationPreferences generationPreferences;
   final bool showActions;
   final int maxThreads;
   final Orientation orientation;
@@ -17,37 +19,17 @@ class SettingsWidget extends StatefulWidget {
   final Function getActiveThreads;
   final Function refreshCallback;
   final Function multispanCallback;
-  final double cfgSliderValue;
-  final Function setCfgSliderValue;
-  final double cfgSliderEValue;
-  final Function setCfgSliderEValue;
-  final double stepSliderValue;
-  final Function setStepSliderValue;
-  final double stepSliderEValue;
-  final Function setStepSliderEValue;
   final Function setAuto;
   final Function getAuto;
-  final Function getRandomSeed;
-  final Function setRandomSeed;
   final Function getAutoDuration;
   final Function setAutoDuration;
   final Function getRange;
   final Function setRange;
-  final Function getUpscale;
-  final Function setUpscale;
 
   const SettingsWidget({
     Key? key,
     required this.refreshCallback,
-    required this.cfgSliderValue,
-    required this.cfgSliderEValue,
-    required this.stepSliderValue,
-    required this.stepSliderEValue,
     required this.multispanCallback,
-    required this.setCfgSliderValue,
-    required this.setCfgSliderEValue,
-    required this.setStepSliderValue,
-    required this.setStepSliderEValue,
     required this.setAuto,
     required this.getAuto,
     required this.controller,
@@ -55,8 +37,6 @@ class SettingsWidget extends StatefulWidget {
     required this.showActions,
     required this.orientation,
     required this.getActiveThreads,
-    required this.getRandomSeed,
-    required this.setRandomSeed,
     required this.maxThreads,
     required this.isModelEnabled,
     required this.toggleModel,
@@ -68,8 +48,7 @@ class SettingsWidget extends StatefulWidget {
     required this.setAutoDuration,
     required this.getRange,
     required this.setRange,
-    required this.getUpscale,
-    required this.setUpscale,
+    required this.generationPreferences,
   }) : super(key: key);
 
   @override
@@ -96,11 +75,11 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                           thumbColor: Colors.green,
                           inactiveColor: Colors.yellow.withOpacity(0.2),
                           activeColor: Colors.yellow.withOpacity(0.2),
-                          value: widget.cfgSliderValue,
+                          value: widget.generationPreferences.cfgSliderValue,
                           min: 1,
-                          max: widget.cfgSliderEValue,
+                          max: widget.generationPreferences.cfgSliderEValue,
                           onChanged: (v) {
-                            widget.setCfgSliderValue(v);
+                            widget.generationPreferences.setCfgSliderValue(v);
                             widget.refreshCallback();
                           }),
                     ),
@@ -112,18 +91,18 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                           thumbColor: Colors.green,
                           inactiveColor: Colors.yellow.withOpacity(0.2),
                           activeColor: Colors.yellow.withOpacity(0.2),
-                          value: widget.stepSliderValue,
+                          value: widget.generationPreferences.stepSliderValue,
                           min: 1,
-                          max: widget.stepSliderEValue,
+                          max: widget.generationPreferences.stepSliderEValue,
                           onChanged: (v) {
-                            widget.setStepSliderValue(v);
+                            widget.generationPreferences.setStepSliderValue(v);
                             widget.refreshCallback();
                           }),
                     ),
                   ),
                   Flexible(
                       child: Text(
-                    'CFG :${widget.cfgSliderValue.toInt()} - ${widget.cfgSliderEValue.toInt()}',
+                    'CFG :${widget.generationPreferences.cfgSliderValue.toInt()} - ${widget.generationPreferences.cfgSliderEValue.toInt()}',
                   )),
                 ],
               )),
@@ -139,11 +118,11 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                           thumbColor: Colors.green,
                           inactiveColor: Colors.yellow.withOpacity(0.2),
                           activeColor: Colors.yellow.withOpacity(0.2),
-                          value: widget.cfgSliderEValue,
-                          min: widget.cfgSliderValue,
+                          value: widget.generationPreferences.cfgSliderEValue,
+                          min: widget.generationPreferences.cfgSliderValue,
                           max: 20,
                           onChanged: (v) {
-                            widget.setCfgSliderEValue(v);
+                            widget.generationPreferences.setCfgSliderEValue(v);
                             widget.refreshCallback();
                           }),
                     ),
@@ -155,18 +134,18 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                           thumbColor: Colors.green,
                           inactiveColor: Colors.yellow.withOpacity(0.2),
                           activeColor: Colors.yellow.withOpacity(0.2),
-                          value: widget.stepSliderEValue,
-                          min: widget.stepSliderValue,
+                          value: widget.generationPreferences.stepSliderEValue,
+                          min: widget.generationPreferences.stepSliderValue,
                           max: 50,
                           onChanged: (v) {
-                            widget.setStepSliderEValue(v);
+                            widget.generationPreferences.setStepSliderEValue(v);
                             widget.refreshCallback();
                           }),
                     ),
                   ),
                   Expanded(
                       child: Text(
-                    'STEP:${widget.stepSliderValue.toInt()} - ${widget.stepSliderEValue.toInt()}',
+                    'STEP:${widget.generationPreferences.stepSliderValue.toInt()} - ${widget.generationPreferences.stepSliderEValue.toInt()}',
                   )),
                 ],
               )),
@@ -174,8 +153,7 @@ class _SettingsWidgetState extends State<SettingsWidget> {
             Flexible(
                 flex: 1,
                 child: ActionsWidget(
-                  getUpscale: widget.getUpscale,
-                  setUpscale: widget.setUpscale,
+                  generationPreferences: widget.generationPreferences,
                   isModelEnabled: widget.isModelEnabled,
                   toggleModel: widget.toggleModel,
                   models: widget.models,
@@ -190,8 +168,6 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                   setAuto: widget.setAuto,
                   getAuto: widget.getAuto,
                   getActiveThreads: widget.getActiveThreads,
-                  getRandomSeed: widget.getRandomSeed,
-                  setRandomSeed: widget.setRandomSeed,
                   samplers: widget.samplers,
                   isSamplerEnabled: widget.isSamplerEnabled,
                   toggleSampler: widget.toggleSampler,

@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:green_bush/services/generation_preferences.dart';
 import 'package:green_bush/ui/prompt_widget.dart';
 import 'package:green_bush/ui/settings_page.dart';
 
 class ActionsWidget extends StatefulWidget {
   final TextEditingController controller;
   final TextEditingController controller2;
+  final GenerationPreferences generationPreferences;
   final Function refreshCallback;
   final Function multispanCallback;
   final Function setAuto;
   final Function getAuto;
   final Function getActiveThreads;
   final Orientation orientation;
-  final Function getRandomSeed;
-  final Function setRandomSeed;
   final Function isModelEnabled;
   final Function toggleModel;
   final List<String> models;
@@ -23,36 +23,30 @@ class ActionsWidget extends StatefulWidget {
   final Function setAutoDuration;
   final Function getRange;
   final Function setRange;
-  final Function getUpscale;
-  final Function setUpscale;
-
   final int maxThreads;
-  const ActionsWidget(
-      {Key? key,
-      required this.controller,
-      required this.controller2,
-      required this.refreshCallback,
-      required this.multispanCallback,
-      required this.setAuto,
-      required this.getAuto,
-      required this.orientation,
-      required this.getActiveThreads,
-      required this.getRandomSeed,
-      required this.setRandomSeed,
-      required this.maxThreads,
-      required this.isModelEnabled,
-      required this.toggleModel,
-      required this.models,
-      required this.samplers,
-      required this.isSamplerEnabled,
-      required this.toggleSampler,
-      required this.getAutoDuration,
-      required this.setAutoDuration,
-      required this.getRange,
-      required this.setRange,
-      required this.getUpscale,
-      required this.setUpscale})
-      : super(key: key);
+  const ActionsWidget({
+    Key? key,
+    required this.controller,
+    required this.controller2,
+    required this.refreshCallback,
+    required this.multispanCallback,
+    required this.setAuto,
+    required this.getAuto,
+    required this.orientation,
+    required this.getActiveThreads,
+    required this.maxThreads,
+    required this.isModelEnabled,
+    required this.toggleModel,
+    required this.models,
+    required this.samplers,
+    required this.isSamplerEnabled,
+    required this.toggleSampler,
+    required this.getAutoDuration,
+    required this.setAutoDuration,
+    required this.getRange,
+    required this.setRange,
+    required this.generationPreferences,
+  }) : super(key: key);
 
   @override
   State<ActionsWidget> createState() => _ActionsWidgetState();
@@ -85,8 +79,10 @@ class _ActionsWidgetState extends State<ActionsWidget> {
                           Navigator.of(context)
                               .push(MaterialPageRoute(builder: (_) {
                             return SettingsPage(
-                              getRandomSeed: widget.getRandomSeed,
-                              setRandomSeed: widget.setRandomSeed,
+                              getRandomSeed:
+                                  widget.generationPreferences.getRandomSeed,
+                              setRandomSeed:
+                                  widget.generationPreferences.setRandomSeed,
                               isModelEnabled: widget.isModelEnabled,
                               toggleModel: widget.toggleModel,
                               models: widget.models,
@@ -97,8 +93,10 @@ class _ActionsWidgetState extends State<ActionsWidget> {
                               setAutoDuration: widget.setAutoDuration,
                               getRange: widget.getRange,
                               setRange: widget.setRange,
-                              getUpscale: widget.getUpscale,
-                              setUpscale: widget.setUpscale,
+                              getUpscale:
+                                  widget.generationPreferences.getUpscale,
+                              setUpscale:
+                                  widget.generationPreferences.setUpscale,
                             );
                           }));
                         },
