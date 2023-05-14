@@ -44,6 +44,7 @@ class KeyboardManager {
       } else {
         playbackState.setAuto(!playbackState.getAuto());
         _pressed = true;
+        refresh();
       }
     } else if (event.logicalKey.keyId == 97) {
       if (_pressed) {
