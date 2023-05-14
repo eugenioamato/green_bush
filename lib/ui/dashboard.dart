@@ -288,17 +288,11 @@ class _DashboardState extends State<Dashboard> {
                   ),
                 )),
                 Flexible(
-                  child: Slider(
-                    divisions: total,
-                    thumbColor: Colors.green,
-                    inactiveColor: Colors.yellow.withOpacity(0.2),
-                    activeColor: Colors.yellow.withOpacity(0.2),
-                    value: playbackState.getPage().toDouble() / total,
-                    onChanged: (double value) {
-                      carouselController.jumpToPage((value * total).toInt());
-                    },
-                  ),
-                ),
+                    child: ProgressSlider(
+                        playbackState: playbackState,
+                        carouselController: carouselController,
+                        total: total,
+                        refresh: refresh)),
                 Expanded(
                   flex: 8,
                   child: CarouselWidget(
