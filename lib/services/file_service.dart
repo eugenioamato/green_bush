@@ -6,13 +6,14 @@ import 'package:path_provider/path_provider.dart';
 class FileService {
   Future<bool> saveFile(Uint8List data, String idd, String prompt,
       String nprompt, String extension) async {
-    final directory = await getExternalStorageDirectory();
-    if (directory == null) {
-      if (kDebugMode) {
-        print('error cannot create dir = null');
+    Directory directory = await getApplicationSupportDirectory();
+    if (Platform.isWindows) {
+      var dir = await getDownloadsDirectory();
+      if (dir != null) {
+        directory = dir;
       }
-      return false;
     }
+
     String label = '$prompt $nprompt $idd';
     String id =
         label.replaceAll(' ', '_').replaceAll(',', '_').replaceAll('/', '-');
