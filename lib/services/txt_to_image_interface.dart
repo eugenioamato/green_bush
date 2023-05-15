@@ -1,6 +1,7 @@
 abstract class TxtToImageInterface {
   List<String> allmodels();
   List<String> allsamplers();
+  String get extension;
 
   void startGeneration(
       int index,

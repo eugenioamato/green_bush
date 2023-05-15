@@ -1,28 +1,50 @@
 import 'package:carousel_slider/carousel_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:green_bush/services/playback_state.dart';
-import 'package:url_launcher/url_launcher.dart';
-
-import 'package:green_bush/models/shot.dart';
 import 'package:green_bush/services/image_repository.dart';
+import 'package:green_bush/services/txt_to_image_interface.dart';
+
+import '../models/shot.dart';
+import 'file_service.dart';
 
 class KeyboardManager {
   final PlaybackState playbackState;
   final ImageRepository imageRepository;
   final CarouselController carouselController;
+  final TxtToImageInterface txtToImage;
+  final TextEditingController controller;
+  final TextEditingController controller2;
+  final Function runAnimation;
 
   KeyboardManager(
     this.playbackState,
     this.imageRepository,
     this.carouselController,
+    this.controller,
+    this.controller2,
+    this.txtToImage,
+    this.runAnimation,
   );
 
+  String createLabel(Shot s) {
+    return '${s.seed} ${txtToImage.allmodels()[s.model]} ${txtToImage.allsamplers()[s.sampler]} ${s.cfg} ${s.steps}';
+  }
+
   var _pressed = false;
-  void manageKeyEvent(KeyEvent event, Function refresh) {
+  void manageKeyEvent(KeyEvent event, Function refresh) async {
     if (event.logicalKey.keyId == 32) {
       playbackState.setAuto(false);
-      Shot shot = imageRepository.getShot(playbackState.getPage());
-      launchUrl(Uri.parse(shot.url), mode: LaunchMode.externalApplication);
+      String id = createLabel(imageRepository.getShot(playbackState.getPage()));
+      final result = FileService().saveFile(
+        imageRepository.getBlob(playbackState.getPage()),
+        id,
+        controller.text,
+        controller2.text,
+        txtToImage.extension,
+      );
+      if (await result) {
+        runAnimation();
+      }
     } else if (event.logicalKey.keyId == 115) {
       if (_pressed) {
         _pressed = false;

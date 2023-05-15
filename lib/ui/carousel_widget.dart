@@ -1,6 +1,7 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:green_bush/services/keyboard_manager.dart';
+import 'package:green_bush/services/txt_to_image_interface.dart';
 import 'package:green_bush/ui/thumb.dart' as th;
 
 import '../services/image_repository.dart';
@@ -13,6 +14,11 @@ class CarouselWidget extends StatefulWidget {
   final ImageRepository imageRepository;
   final Function refresh;
   final KeyboardManager keyboardManager;
+  final Function createLabel;
+  final TextEditingController controller;
+  final TextEditingController controller2;
+  final TxtToImageInterface txtToImage;
+  final Function runAnimation;
 
   const CarouselWidget({
     Key? key,
@@ -22,6 +28,11 @@ class CarouselWidget extends StatefulWidget {
     required this.playbackState,
     required this.keyboardManager,
     required this.imageRepository,
+    required this.createLabel,
+    required this.controller,
+    required this.controller2,
+    required this.txtToImage,
+    required this.runAnimation,
   }) : super(key: key);
 
   @override
@@ -40,6 +51,9 @@ class _CarouselWidgetState extends State<CarouselWidget> {
         child: CarouselSlider(
           items: List.generate(widget.imageRepository.getLen(), (v) => v)
               .map((e) => th.Thumb(
+                    runAnimation: widget.runAnimation,
+                    controller: widget.controller,
+                    controller2: widget.controller2,
                     imageRepository: widget.imageRepository,
                     shot: widget.imageRepository.getShot(e),
                     setAuto: widget.playbackState.setAuto,
@@ -47,6 +61,8 @@ class _CarouselWidgetState extends State<CarouselWidget> {
                     getPrecaching: widget.imageRepository.getPrecaching,
                     refresh: widget.refresh,
                     playbackState: widget.playbackState,
+                    createLabel: widget.createLabel,
+                    txtToImage: widget.txtToImage,
                   ))
               .toList(),
           carouselController: widget.carouselController,

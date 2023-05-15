@@ -215,10 +215,9 @@ class TxtToImageDirect implements TxtToImageInterface {
     if (kDebugMode) {
       print('FINALIZED SHOT $index');
     }
-
-    final image = Image.memory(
-      base64Decode(base64image),
-    );
+    final blobdata = base64Decode(base64image);
+    final image = Image.memory(blobdata);
+    imageRepository.setBlob(index, blobdata);
     imageRepository.setImage(index, image);
 
     imageRepository.addShot(index, updatedShot);
@@ -302,7 +301,7 @@ class TxtToImageDirect implements TxtToImageInterface {
                       setState,
                       0,
                     ));
-                await Future.delayed(const Duration(milliseconds: 5));
+                await Future.delayed(const Duration(milliseconds: 250));
               }
             }
           }
@@ -310,4 +309,7 @@ class TxtToImageDirect implements TxtToImageInterface {
       }
     }
   }
+
+  @override
+  String get extension => 'png';
 }

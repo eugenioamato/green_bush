@@ -133,6 +133,7 @@ class TxtToImage implements TxtToImageInterface {
     imageRepository.addShot(index, earlyShot);
 
     String url = '';
+    int realSeed = seed;
     Future.delayed(const Duration(seconds: 10));
 
     int r = 0;
@@ -165,6 +166,11 @@ class TxtToImage implements TxtToImageInterface {
       final resp2 = jsonDecode(result2.toString());
       if (resp2.containsKey('imageUrl')) {
         url = resp2['imageUrl'];
+        if (resp2.containsKey('params')) {
+          if (resp2['params'].containsKey('seed')) {
+            realSeed = resp2['params']['seed'];
+          }
+        }
       } else {
         if ((resp2['status'] == 'failed') ||
             ((r > 25) && (resp2['status'] != 'queued'))) {
@@ -193,7 +199,7 @@ class TxtToImage implements TxtToImageInterface {
     } while (url.isEmpty);
 
     final updatedShot = Shot(
-        job, url, prompt, nprompt, cfg, steps, seed, model, sampler, index);
+        job, url, prompt, nprompt, cfg, steps, realSeed, model, sampler, index);
 
     imageRepository.addShot(index, updatedShot);
     final page = playbackState.getPage();
@@ -304,4 +310,7 @@ class TxtToImage implements TxtToImageInterface {
       }
     }
   }
+
+  @override
+  String get extension => 'png';
 }

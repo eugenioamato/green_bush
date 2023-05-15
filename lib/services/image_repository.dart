@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -22,9 +23,13 @@ class ImageRepository {
         timeout: const Duration(seconds: 16));
   }
 
+  final HashMap<int, Uint8List> _blob = HashMap<int, Uint8List>();
   final HashMap<int, Shot> _src = HashMap<int, Shot>();
   final HashMap<int, Image> _img = HashMap<int, Image>();
 
+  Uint8List getBlob(int page) =>
+      _blob.containsKey(page) ? _blob[page]! : Uint8List(0);
+  void setBlob(int index, Uint8List data) => _blob[index] = data;
   Image? getImage(int index) => _img.containsKey(index) ? _img[index] : null;
   void setImage(int index, Image image) => _img[index] = image;
   Shot getShot(int index) =>
@@ -91,31 +96,34 @@ class ImageRepository {
 
     systemPreferences.activeDownloads++;
     try {
-      image.image
-          .resolve(const ImageConfiguration())
-          .addListener(ImageStreamListener((_, __) {
-            if (kDebugMode) {
-              final bytes =
-                  PaintingBinding.instance.imageCache.currentSizeBytes;
-              final maxbytes =
-                  PaintingBinding.instance.imageCache.maximumSizeBytes;
+      final resolver = image.image.resolve(const ImageConfiguration());
+      resolver.addListener(ImageStreamListener((data, __) async {
+        if (kDebugMode) {
+          final bytes = PaintingBinding.instance.imageCache.currentSizeBytes;
+          final maxbytes = PaintingBinding.instance.imageCache.maximumSizeBytes;
 
-              print(':: $bytes / $maxbytes');
-            }
-            getPrecaching().remove(s.id);
-            if (kDebugMode) {
-              print('ending    precache ${s.id} ${getPrecaching()} }');
-            }
-            playbackState.updateSecondarySlider();
-            setImage(s.index, image);
-            systemPreferences.activeDownloads--;
-            refresh();
-            playbackState.updateSecondarySlider();
-          }, onError: (e, stack) {
-            if (kDebugMode) {
-              print('error on listener $e $stack');
-            }
-          }));
+          print(':: $bytes / $maxbytes');
+        }
+        getPrecaching().remove(s.id);
+        if (kDebugMode) {
+          print('ending    precache ${s.id} ${getPrecaching()} }');
+        }
+        final byteData =
+            await data.image.toByteData(format: ImageByteFormat.png);
+        final bufferData = byteData?.buffer.asUint8List();
+        if (bufferData != null) {
+          setBlob(s.index, bufferData);
+        }
+        playbackState.updateSecondarySlider();
+        setImage(s.index, image);
+        systemPreferences.activeDownloads--;
+        refresh();
+        playbackState.updateSecondarySlider();
+      }, onError: (e, stack) {
+        if (kDebugMode) {
+          print('error on listener $e $stack');
+        }
+      }));
     } on Exception catch (e) {
       if (kDebugMode) {
         print('error resolving image $e');

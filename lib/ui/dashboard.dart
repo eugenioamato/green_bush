@@ -71,8 +71,8 @@ class _DashboardState extends State<Dashboard> {
     }
     generationPreferences.init(
         txtToImage.allmodels().length, txtToImage.allsamplers().length);
-    keyboardManager =
-        KeyboardManager(playbackState, imageRepository, carouselController);
+    keyboardManager = KeyboardManager(playbackState, imageRepository,
+        carouselController, controller, controller2, txtToImage, runAnimation);
     if (kDebugMode) {
       print('API_KEY IS $apiKey');
     }
@@ -82,6 +82,12 @@ class _DashboardState extends State<Dashboard> {
       systemPreferences.maxThreads = 50;
     }
     super.initState();
+  }
+
+  void runAnimation() {
+    if (kDebugMode) {
+      print('running animation');
+    }
   }
 
   FocusNode focusNode = FocusNode();
@@ -121,12 +127,17 @@ class _DashboardState extends State<Dashboard> {
                       Align(
                         alignment: AlignmentDirectional.center,
                         child: CarouselWidget(
+                          runAnimation: runAnimation,
+                          createLabel: createLabel,
                           playbackState: playbackState,
                           imageRepository: imageRepository,
                           focusNode: focusNode,
                           carouselController: carouselController,
                           refresh: refresh,
                           keyboardManager: keyboardManager,
+                          controller: controller,
+                          controller2: controller2,
+                          txtToImage: txtToImage,
                         ),
                       ),
                       Align(
@@ -305,12 +316,17 @@ class _DashboardState extends State<Dashboard> {
                 Expanded(
                   flex: 8,
                   child: CarouselWidget(
+                    runAnimation: runAnimation,
+                    createLabel: createLabel,
                     imageRepository: imageRepository,
                     playbackState: playbackState,
                     focusNode: focusNode,
                     carouselController: carouselController,
                     refresh: refresh,
                     keyboardManager: keyboardManager,
+                    controller: controller,
+                    controller2: controller2,
+                    txtToImage: txtToImage,
                   ),
                 ),
                 Expanded(
