@@ -7,8 +7,13 @@ class FileService {
   Future<bool> saveFile(Uint8List data, String idd, String prompt,
       String nprompt, String extension) async {
     Directory directory = await getApplicationSupportDirectory();
-    if (Platform.isWindows) {
+    if (Platform.isWindows || Platform.isMacOS) {
       var dir = await getDownloadsDirectory();
+      if (dir != null) {
+        directory = dir;
+      }
+    } else if (Platform.isAndroid) {
+      var dir = await getExternalStorageDirectory();
       if (dir != null) {
         directory = dir;
       }
