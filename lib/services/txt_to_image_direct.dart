@@ -301,7 +301,7 @@ class TxtToImageDirect implements TxtToImageInterface {
                       setState,
                       0,
                     ));
-                await Future.delayed(const Duration(milliseconds: 250));
+                await Future.delayed(const Duration(milliseconds: 500));
               }
             }
           }
