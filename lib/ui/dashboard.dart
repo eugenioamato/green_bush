@@ -15,6 +15,9 @@ import 'package:green_bush/services/image_repository.dart';
 import 'package:green_bush/services/playback_state.dart';
 import 'package:green_bush/services/keyboard_manager.dart';
 
+import '../services/txt_to_image_direct.dart';
+import '../services/txt_to_image_interface.dart';
+
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key, required this.title});
   final String title;
@@ -34,11 +37,12 @@ class _DashboardState extends State<Dashboard> {
   late final KeyboardManager keyboardManager;
   late final ImageRepository imageRepository;
   late final PlaybackState playbackState;
-  late final TxtToImage txtToImage;
+  late final TxtToImageInterface txtToImage;
   late final String apiKey;
   late final String apiName;
   late final String apiGenerationEndpoint;
   late final String apiFetchEndpoint;
+  late final bool directDownload;
 
   @override
   void initState() {
@@ -47,11 +51,19 @@ class _DashboardState extends State<Dashboard> {
     apiGenerationEndpoint =
         const String.fromEnvironment('api_generation_endpoint');
     apiFetchEndpoint = const String.fromEnvironment('api_fetch_endpoint');
+    directDownload = const String.fromEnvironment('direct_download') == 'true'
+        ? true
+        : false;
 
     imageRepository = ImageRepository(systemPreferences, refresh);
     playbackState = PlaybackState(imageRepository, systemPreferences);
-    txtToImage = TxtToImage(playbackState, imageRepository, focusNode,
-        systemPreferences, generationPreferences);
+    if (directDownload) {
+      txtToImage = TxtToImageDirect(playbackState, imageRepository, focusNode,
+          systemPreferences, generationPreferences);
+    } else {
+      txtToImage = TxtToImage(playbackState, imageRepository, focusNode,
+          systemPreferences, generationPreferences);
+    }
     keyboardManager =
         KeyboardManager(playbackState, imageRepository, carouselController);
     if (kDebugMode) {

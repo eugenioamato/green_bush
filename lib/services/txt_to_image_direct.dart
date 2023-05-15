@@ -13,7 +13,7 @@ import 'package:green_bush/models/shot.dart';
 import 'package:green_bush/services/generation_preferences.dart';
 import 'package:green_bush/services/image_repository.dart';
 
-class TxtToImage implements TxtToImageInterface {
+class TxtToImageDirect implements TxtToImageInterface {
   final PlaybackState playbackState;
   final ImageRepository imageRepository;
   final FocusNode focusNode;
@@ -21,7 +21,7 @@ class TxtToImage implements TxtToImageInterface {
   final GenerationPreferences generationPreferences;
   late final Pool pool;
 
-  TxtToImage(
+  TxtToImageDirect(
     this.playbackState,
     this.imageRepository,
     this.focusNode,
@@ -61,17 +61,27 @@ class TxtToImage implements TxtToImageInterface {
     final placeholderShot = Shot(index.toString(), '', prompt, nprompt, cfg,
         steps, seed, model, sampler, index);
     imageRepository.addShot(index, placeholderShot);
+
     final data = <String, dynamic>{
-      "model": generationPreferences.models[model],
-      "prompt": prompt,
-      "negative_prompt": nprompt,
-      "steps": steps,
-      "cfg_scale": cfg,
-      "sampler": generationPreferences.samplers[sampler],
-      "aspect_ratio": "landscape",
-      "seed": seed,
-      "upscale": upscale,
+      "options": {
+        "sd_model_checkpoint": "edgeOfRealism_eorV20Fp16BakedVAE.safetensors"
+      },
+      "original_prompt": prompt,
+      "txt2img": {
+        "prompt": prompt,
+        "negative_prompt": nprompt,
+        "steps": steps,
+        "width": 640,
+        "height": 512,
+        "sampler_name": generationPreferences.samplers[sampler],
+        "cfg_scale": cfg,
+        "seed": seed
+      },
+      "sd_user_id": "972bf9cc-72a4-4436-aae3-fa470bab1ec3",
+      "sd_session_id": "972bf9cc-72a4-4436-aae3-fa470bab1ec3",
+      "columnIndex": 0
     };
+
     final str = jsonEncode(data);
     final Response<dynamic> result;
 
@@ -79,7 +89,6 @@ class TxtToImage implements TxtToImageInterface {
       result = await dio.post(apiGenerationEndpoint,
           data: str,
           options: Options(headers: {
-            apiName: apiKey,
             'accept': 'application/json',
             'content-type': 'application/json'
           }));
@@ -93,12 +102,12 @@ class TxtToImage implements TxtToImageInterface {
     }
 
     final resp = jsonDecode(result.toString());
-    final String job = resp['job'];
+    final String job = resp['id'];
     final earlyShot =
         Shot(job, '', prompt, nprompt, cfg, steps, seed, model, sampler, index);
     imageRepository.addShot(index, earlyShot);
 
-    String url = '';
+    String base64image = '';
     Future.delayed(const Duration(seconds: 10));
 
     int r = 0;
@@ -107,7 +116,8 @@ class TxtToImage implements TxtToImageInterface {
       try {
         result2 = await dio.get("$apiFetchEndpoint$job",
             options: Options(headers: {
-              apiName: apiKey,
+              "sd_user_id": "972bf9cc-72a4-4436-aae3-fa470bab1ec3",
+              "sd_session_id": "972bf9cc-72a4-4436-aae3-fa470bab1ec3",
               'accept': 'application/json',
             }));
       } on Exception catch (e) {
@@ -120,11 +130,18 @@ class TxtToImage implements TxtToImageInterface {
       }
 
       final resp2 = jsonDecode(result2.toString());
-      if (resp2.containsKey('imageUrl')) {
-        url = resp2['imageUrl'];
+      if (kDebugMode) {
+        print(result2.toString().substring(0, 244));
+      }
+
+      if (resp2.containsKey('jobRec') &&
+          resp2['jobRec'].containsKey('response') &&
+          resp2['jobRec']['response'] != null &&
+          resp2['jobRec']['response'].containsKey('images')) {
+        base64image = resp2['jobRec']['response']['images'].first;
       } else {
-        if ((resp2['status'] == 'failed') ||
-            ((r > 25) && (resp2['status'] != 'queued'))) {
+        if ((resp2['success'] == 'false') ||
+            ((r > 7) && (resp2['status'] != 'queued'))) {
           if (kDebugMode) {
             print('failed job with:\n$resp2');
           }
@@ -132,33 +149,34 @@ class TxtToImage implements TxtToImageInterface {
               apiGenerationEndpoint, apiFetchEndpoint, repeatIndex, upscale);
           return;
         }
-        await Future.delayed(const Duration(seconds: 1));
+        await Future.delayed(const Duration(seconds: 5));
         if (kDebugMode) {
           print('retry d:$job r=$r');
         }
         r++;
       }
-    } while (url.isEmpty);
+    } while (base64image.isEmpty);
 
     final updatedShot = Shot(
-        job, url, prompt, nprompt, cfg, steps, seed, model, sampler, index);
+        job, '/', prompt, nprompt, cfg, steps, seed, model, sampler, index);
+
+    if (kDebugMode) {
+      print('FINALIZED SHOT $index');
+    }
+
+    final image = Image.memory(
+      base64Decode(base64image),
+    );
+    imageRepository.setImage(index, image);
 
     imageRepository.addShot(index, updatedShot);
-    final page = playbackState.getPage();
-    if (url.isNotEmpty) {
-      if ((index - page <= systemPreferences.getRange()) &&
-          (index - page >= 0)) {
-        if (!imageRepository.getPrecaching().contains(job)) {
-          imageRepository.poolprecache(updatedShot, playbackState);
-        }
-      }
-    }
     systemPreferences.activeThreads--;
     setState(() {});
   }
 
   void eraseOrRedo(Shot s, setState, apiKey, apiName, apiGenerationEnpoint,
       apiFetchEndpoint, repeatIndex, upscale) {
+    /*
     systemPreferences.activeThreads--;
     startGeneration(
         s.index,
@@ -176,6 +194,7 @@ class TxtToImage implements TxtToImageInterface {
         apiFetchEndpoint,
         setState,
         repeatIndex + 1);
+  */
   }
 
   @override

@@ -23,11 +23,10 @@ class ImageRepository {
   }
 
   final HashMap<int, Shot> _src = HashMap<int, Shot>();
-
   final HashMap<int, Image> _img = HashMap<int, Image>();
+
   Image? getImage(int index) => _img.containsKey(index) ? _img[index] : null;
   void setImage(int index, Image image) => _img[index] = image;
-
   Shot getShot(int index) =>
       (_src.containsKey(index)) ? _src[index]! : fakeShot(index);
   void addShot(int index, Shot s) => _src[index] = s;
@@ -36,20 +35,23 @@ class ImageRepository {
   }
 
   Iterable<Shot> getSrc() => _src.values;
-
   int getLen() => _src.length;
 
   void removeFromCache(Shot s) {
-    int index = s.index;
-    _img[index]?.image.evict();
-    _img.remove(index);
+    if (s.url.length > 1) {
+      int index = s.index;
+      _img[index]?.image.evict();
+      _img.remove(index);
+    }
   }
 
   Set<String> precaching = {};
   Set<String> getPrecaching() => precaching;
 
   void poolprecache(Shot s, PlaybackState playbackState) {
-    pool.withResource(() => _precache(s, playbackState));
+    if (s.url.length > 1) {
+      pool.withResource(() => _precache(s, playbackState));
+    }
   }
 
   void _precache(Shot s, PlaybackState playbackState) {
