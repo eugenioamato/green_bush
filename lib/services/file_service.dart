@@ -6,7 +6,7 @@ import 'package:path_provider/path_provider.dart';
 class FileService {
   Future<bool> saveFile(Uint8List data, String idd, String prompt,
       String nprompt, String extension) async {
-    final directory = await getDownloadsDirectory();
+    final directory = await getExternalStorageDirectory();
     if (directory == null) {
       if (kDebugMode) {
         print('error cannot create dir = null');

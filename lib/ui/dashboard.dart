@@ -17,6 +17,7 @@ import 'package:green_bush/services/keyboard_manager.dart';
 
 import '../services/txt_to_image_direct.dart';
 import '../services/txt_to_image_interface.dart';
+import 'like_widget.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key, required this.title});
@@ -154,19 +155,8 @@ class _DashboardState extends State<Dashboard>
                         ),
                       ),
                       Center(
-                          child: AnimatedBuilder(
-                        animation: _animationController,
-                        child: const Icon(
-                          Icons.heart_broken,
-                          color: Colors.red,
-                          size: 32,
-                        ),
-                        builder: (context, child) {
-                          return Transform.scale(
-                            scale: _animationController.value,
-                            child: child,
-                          );
-                        },
+                          child: LikeWidget(
+                        animationController: _animationController,
                       )),
                       Align(
                         alignment: const Alignment(0.95, -0.95),
@@ -357,6 +347,10 @@ class _DashboardState extends State<Dashboard>
                     txtToImage: txtToImage,
                   ),
                 ),
+                Center(
+                    child: LikeWidget(
+                  animationController: _animationController,
+                )),
                 Expanded(
                   flex: 5,
                   child: SettingsWidget(
