@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:green_bush/services/generation_preferences.dart';
 import 'package:green_bush/services/playback_state.dart';
 import 'package:green_bush/services/system_preferences.dart';
+import 'package:green_bush/services/txt_to_image_interface.dart';
 import 'package:green_bush/ui/prompt_widget.dart';
 import 'package:green_bush/ui/settings_page.dart';
 
@@ -10,6 +11,7 @@ class ActionsWidget extends StatefulWidget {
   final TextEditingController controller2;
   final SystemPreferences systemPreferences;
   final GenerationPreferences generationPreferences;
+  final TxtToImageInterface txtToImage;
   final PlaybackState playbackState;
   final Function refreshCallback;
   final Function multispanCallback;
@@ -25,6 +27,7 @@ class ActionsWidget extends StatefulWidget {
     required this.generationPreferences,
     required this.systemPreferences,
     required this.playbackState,
+    required this.txtToImage,
   }) : super(key: key);
 
   @override
@@ -62,6 +65,7 @@ class _ActionsWidgetState extends State<ActionsWidget> {
                               generationPreferences:
                                   widget.generationPreferences,
                               playbackState: widget.playbackState,
+                              txtToImage: widget.txtToImage,
                             );
                           }));
                         },

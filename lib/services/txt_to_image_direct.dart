@@ -32,6 +32,58 @@ class TxtToImageDirect implements TxtToImageInterface {
         timeout: const Duration(seconds: 60));
   }
 
+  @override
+  List<String> allsamplers() => [
+        "DPM++ 2M Karras",
+        "DPM++ SDE Karras",
+        "DPM++ 2S a Karras",
+        "DDIM",
+        "DPM++ 2S a",
+        "Euler",
+        "Euler a",
+        "Heun",
+      ];
+
+  @override
+  allmodels() => [
+        "experience_80.safetensors",
+        "realisticVisionV20_v20.safetensors",
+        "uberRealisticPornMerge_urpmv13.safetensors",
+        "hardblend_.safetensors",
+        "Degenerate_deliberateV1.safetensors",
+        "3moonNIReal_3moonNIRealV2.safetensors",
+        "stable-diffusion-2-1/v2-1_768-nonema-pruned.ckpt",
+        "crystalClear_v10.safetensors",
+        "edgeOfRealism_eorV20Fp16BakedVAE.safetensors",
+        "deliberate.TWTR.ckpt",
+        "life20like20diffusion.D2sc.safetensors",
+        "cineDiffusionV3Half.8epy.safetensors",
+        "amirealV2Pruned.XH5l.safetensors",
+        "artisanicaV1.iOiq.safetensors",
+        "2348Old20fish2012.jr7T.safetensors",
+        "revAnimated_v11.safetensors",
+        "analogmadnessv4.w480.safetensors",
+        "mixrealV2.xje4.safetensors",
+        "dreamlike-diffusion-2.0.ckpt",
+        "openjourney-v4/openjourney-v4.ckpt",
+        "cheeseDaddys_35.safetensors",
+        "526mixV14_v14.safetensors",
+        "hyperV1_v10.safetensors",
+        "lyriel_v15.safetensors",
+        "stylejourney_v10.safetensors",
+        "realismEngine_v10.safetensors",
+        "classicNegativeSD21_classicNegative768px.ckpt",
+        "walnutcreamBlend_herbmixV1.safetensors",
+        "dreamshaper_4BakedVae.safetensors",
+        "stable-diffusion-v1-5/v1-5-pruned-emaonly.ckpt",
+        "chilloutmix_NiPrunedFp32Fix.safetensors",
+        "timeless-1.0.ckpt",
+        "portrait+1.0.ckpt",
+        "Analog-Diffusion/analog-diffusion-1.0.ckpt",
+        "stable-diffusion-2-1/v2-1_768-nonema-pruned.ckpt",
+        "Counterfeit-V2.5/Counterfeit-V2.5_fp16.safetensors",
+      ];
+
   final Dio dio = Dio();
 
   @override
@@ -47,6 +99,8 @@ class TxtToImageDirect implements TxtToImageInterface {
       upscale,
       apiKey,
       apiName,
+      apiSession,
+      apiSessionName,
       apiGenerationEndpoint,
       apiFetchEndpoint,
       setState,
@@ -63,9 +117,7 @@ class TxtToImageDirect implements TxtToImageInterface {
     imageRepository.addShot(index, placeholderShot);
 
     final data = <String, dynamic>{
-      "options": {
-        "sd_model_checkpoint": "edgeOfRealism_eorV20Fp16BakedVAE.safetensors"
-      },
+      "options": {"sd_model_checkpoint": allmodels()[model]},
       "original_prompt": prompt,
       "txt2img": {
         "prompt": prompt,
@@ -73,7 +125,7 @@ class TxtToImageDirect implements TxtToImageInterface {
         "steps": steps,
         "width": 640,
         "height": 512,
-        "sampler_name": generationPreferences.samplers[sampler],
+        "sampler_name": allsamplers()[sampler],
         "cfg_scale": cfg,
         "seed": seed
       },
@@ -89,6 +141,8 @@ class TxtToImageDirect implements TxtToImageInterface {
       result = await dio.post(apiGenerationEndpoint,
           data: str,
           options: Options(headers: {
+            apiName: apiKey,
+            "sd_session_id": "972bf9cc-72a4-4436-aae3-fa470bab1ec3",
             'accept': 'application/json',
             'content-type': 'application/json'
           }));
@@ -116,8 +170,6 @@ class TxtToImageDirect implements TxtToImageInterface {
       try {
         result2 = await dio.get("$apiFetchEndpoint$job",
             options: Options(headers: {
-              "sd_user_id": "972bf9cc-72a4-4436-aae3-fa470bab1ec3",
-              "sd_session_id": "972bf9cc-72a4-4436-aae3-fa470bab1ec3",
               'accept': 'application/json',
             }));
       } on Exception catch (e) {
@@ -131,7 +183,7 @@ class TxtToImageDirect implements TxtToImageInterface {
 
       final resp2 = jsonDecode(result2.toString());
       if (kDebugMode) {
-        print(result2.toString().substring(0, 244));
+        print(result2.toString());
       }
 
       if (resp2.containsKey('jobRec') &&
@@ -141,7 +193,7 @@ class TxtToImageDirect implements TxtToImageInterface {
         base64image = resp2['jobRec']['response']['images'].first;
       } else {
         if ((resp2['success'] == 'false') ||
-            ((r > 7) && (resp2['status'] != 'queued'))) {
+            ((r > 22) && (resp2['status'] != 'queued'))) {
           if (kDebugMode) {
             print('failed job with:\n$resp2');
           }
@@ -198,8 +250,8 @@ class TxtToImageDirect implements TxtToImageInterface {
   }
 
   @override
-  void multiSpan(setState, apiKey, apiName, apiGenerationEndpoint,
-      apiFetchEndpoint, prompt, nprompt) async {
+  void multiSpan(setState, apiKey, apiName, apiSessionKey, apiSessionName,
+      apiGenerationEndpoint, apiFetchEndpoint, prompt, nprompt) async {
     playbackState.setAuto(false);
     imageRepository.clearCache();
 
@@ -220,13 +272,9 @@ class TxtToImageDirect implements TxtToImageInterface {
     final upscale = generationPreferences.getUpscale();
     int index = 0;
 
-    for (int method = 0;
-        method < generationPreferences.selectedModels.length;
-        method++) {
-      if (generationPreferences.selectedModels[method]) {
-        for (int sampler = 0;
-            sampler < generationPreferences.samplers.length;
-            sampler++) {
+    for (int model = 0; model < allmodels().length; model++) {
+      if (true) {
+        for (int sampler = 0; sampler < allsamplers().length; sampler++) {
           if (generationPreferences.selectedSamplers[sampler]) {
             for (int cfg = generationPreferences.cfgSliderValue.toInt();
                 cfg < generationPreferences.cfgSliderEValue + 1;
@@ -239,7 +287,7 @@ class TxtToImageDirect implements TxtToImageInterface {
                       index++,
                       prompt,
                       nprompt,
-                      method,
+                      model,
                       sampler,
                       cfg,
                       steps,
@@ -247,6 +295,8 @@ class TxtToImageDirect implements TxtToImageInterface {
                       upscale,
                       apiKey,
                       apiName,
+                      apiSessionKey,
+                      apiSessionName,
                       apiGenerationEndpoint,
                       apiFetchEndpoint,
                       setState,

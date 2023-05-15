@@ -32,6 +32,29 @@ class TxtToImage implements TxtToImageInterface {
         timeout: const Duration(seconds: 60));
   }
 
+  @override
+  List<String> allsamplers() => [
+        "DPM++ 2M Karras",
+        "Euler",
+        "Euler a",
+        "Heun",
+      ];
+
+  @override
+  List<String> allmodels() => [
+        "elldreths-vivid-mix.safetensors [342d9d26]", //#shiny
+        "deliberate_v2.safetensors [10ec4b29]", // #realistic #errorprone
+        "dreamshaper_5BakedVae.safetensors [a3fbf318]", // #art b&w
+        "revAnimated_v122.safetensors [3f4fefd9]", // #plastic
+        "lyriel_v15.safetensors [65d547c5]", // #jesus
+        "Realistic_Vision_V2.0.safetensors [79587710]",
+        "timeless-1.0.ckpt [7c4971d4]",
+        "portrait+1.0.safetensors [1400e684]",
+        "openjourney_V4.ckpt [ca2f377f]",
+        "theallys-mix-ii-churned.safetensors [5d9225a4]",
+        "analog-diffusion-1.0.ckpt [9ca13f02]",
+      ];
+
   final Dio dio = Dio();
 
   @override
@@ -47,6 +70,8 @@ class TxtToImage implements TxtToImageInterface {
       upscale,
       apiKey,
       apiName,
+      apiSessionKey,
+      apiSessionName,
       apiGenerationEndpoint,
       apiFetchEndpoint,
       setState,
@@ -62,12 +87,12 @@ class TxtToImage implements TxtToImageInterface {
         steps, seed, model, sampler, index);
     imageRepository.addShot(index, placeholderShot);
     final data = <String, dynamic>{
-      "model": generationPreferences.models[model],
+      "model": allmodels()[model],
       "prompt": prompt,
       "negative_prompt": nprompt,
       "steps": steps,
       "cfg_scale": cfg,
-      "sampler": generationPreferences.samplers[sampler],
+      "sampler": allsamplers()[sampler],
       "aspect_ratio": "landscape",
       "seed": seed,
       "upscale": upscale,
@@ -87,8 +112,17 @@ class TxtToImage implements TxtToImageInterface {
       if (kDebugMode) {
         print('error on job creation \n$e');
       }
-      eraseOrRedo(placeholderShot, setState, apiKey, apiName,
-          apiGenerationEndpoint, apiFetchEndpoint, repeatIndex, upscale);
+      eraseOrRedo(
+          placeholderShot,
+          setState,
+          apiKey,
+          apiName,
+          apiSessionKey,
+          apiSessionName,
+          apiGenerationEndpoint,
+          apiFetchEndpoint,
+          repeatIndex,
+          upscale);
       return;
     }
 
@@ -114,8 +148,17 @@ class TxtToImage implements TxtToImageInterface {
         if (kDebugMode) {
           print('error during job retrieving : $e');
         }
-        eraseOrRedo(earlyShot, setState, apiKey, apiName, apiGenerationEndpoint,
-            apiFetchEndpoint, repeatIndex, upscale);
+        eraseOrRedo(
+            earlyShot,
+            setState,
+            apiKey,
+            apiName,
+            apiSessionKey,
+            apiSessionName,
+            apiGenerationEndpoint,
+            apiFetchEndpoint,
+            repeatIndex,
+            upscale);
         return;
       }
 
@@ -128,8 +171,17 @@ class TxtToImage implements TxtToImageInterface {
           if (kDebugMode) {
             print('failed job with:\n$resp2');
           }
-          eraseOrRedo(earlyShot, setState, apiKey, apiName,
-              apiGenerationEndpoint, apiFetchEndpoint, repeatIndex, upscale);
+          eraseOrRedo(
+              earlyShot,
+              setState,
+              apiKey,
+              apiName,
+              apiSessionKey,
+              apiSessionName,
+              apiGenerationEndpoint,
+              apiFetchEndpoint,
+              repeatIndex,
+              upscale);
           return;
         }
         await Future.delayed(const Duration(seconds: 1));
@@ -157,8 +209,17 @@ class TxtToImage implements TxtToImageInterface {
     setState(() {});
   }
 
-  void eraseOrRedo(Shot s, setState, apiKey, apiName, apiGenerationEnpoint,
-      apiFetchEndpoint, repeatIndex, upscale) {
+  void eraseOrRedo(
+      Shot s,
+      setState,
+      apiKey,
+      apiName,
+      apiSessionKey,
+      apiSessionName,
+      apiGenerationEnpoint,
+      apiFetchEndpoint,
+      repeatIndex,
+      upscale) {
     systemPreferences.activeThreads--;
     startGeneration(
         s.index,
@@ -172,6 +233,8 @@ class TxtToImage implements TxtToImageInterface {
         upscale,
         apiKey,
         apiName,
+        apiSessionKey,
+        apiSessionName,
         apiGenerationEnpoint,
         apiFetchEndpoint,
         setState,
@@ -179,8 +242,8 @@ class TxtToImage implements TxtToImageInterface {
   }
 
   @override
-  void multiSpan(setState, apiKey, apiName, apiGenerationEndpoint,
-      apiFetchEndpoint, prompt, nprompt) async {
+  void multiSpan(setState, apiKey, apiName, apiSessionKey, apiSessionName,
+      apiGenerationEndpoint, apiFetchEndpoint, prompt, nprompt) async {
     playbackState.setAuto(false);
     imageRepository.clearCache();
 
@@ -205,9 +268,7 @@ class TxtToImage implements TxtToImageInterface {
         method < generationPreferences.selectedModels.length;
         method++) {
       if (generationPreferences.selectedModels[method]) {
-        for (int sampler = 0;
-            sampler < generationPreferences.samplers.length;
-            sampler++) {
+        for (int sampler = 0; sampler < allsamplers().length; sampler++) {
           if (generationPreferences.selectedSamplers[sampler]) {
             for (int cfg = generationPreferences.cfgSliderValue.toInt();
                 cfg < generationPreferences.cfgSliderEValue + 1;
@@ -228,6 +289,8 @@ class TxtToImage implements TxtToImageInterface {
                       upscale,
                       apiKey,
                       apiName,
+                      apiSessionKey,
+                      apiSessionName,
                       apiGenerationEndpoint,
                       apiFetchEndpoint,
                       setState,

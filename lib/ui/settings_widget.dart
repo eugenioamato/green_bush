@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:green_bush/services/generation_preferences.dart';
 import 'package:green_bush/services/playback_state.dart';
 import 'package:green_bush/services/system_preferences.dart';
+import 'package:green_bush/services/txt_to_image_interface.dart';
 
 import 'actions_widget.dart';
 
@@ -11,6 +12,7 @@ class SettingsWidget extends StatefulWidget {
   final PlaybackState playbackState;
   final bool showActions;
   final Orientation orientation;
+  final TxtToImageInterface txtToImage;
   final TextEditingController controller;
   final TextEditingController controller2;
   final Function refreshCallback;
@@ -27,6 +29,8 @@ class SettingsWidget extends StatefulWidget {
     required this.generationPreferences,
     required this.systemPreferences,
     required this.playbackState,
+    required this.txtToImage,
+    required TxtToImageInterface txtToImageInterface,
   }) : super(key: key);
 
   @override
@@ -139,6 +143,7 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                   orientation: widget.orientation,
                   multispanCallback: widget.multispanCallback,
                   refreshCallback: widget.refreshCallback,
+                  txtToImage: widget.txtToImage,
                 )),
         ],
       ),

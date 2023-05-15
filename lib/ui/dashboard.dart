@@ -32,7 +32,7 @@ class _DashboardState extends State<Dashboard> {
   final TextEditingController controller2 = TextEditingController()
     ..text = "cartoon, blur";
   final CarouselController carouselController = CarouselController();
-  final GenerationPreferences generationPreferences = GenerationPreferences();
+  late final GenerationPreferences generationPreferences;
   final SystemPreferences systemPreferences = SystemPreferences();
   late final KeyboardManager keyboardManager;
   late final ImageRepository imageRepository;
@@ -40,6 +40,8 @@ class _DashboardState extends State<Dashboard> {
   late final TxtToImageInterface txtToImage;
   late final String apiKey;
   late final String apiName;
+  late final String apiSessionKey;
+  late final String apiSessionName;
   late final String apiGenerationEndpoint;
   late final String apiFetchEndpoint;
   late final bool directDownload;
@@ -48,6 +50,8 @@ class _DashboardState extends State<Dashboard> {
   void initState() {
     apiKey = const String.fromEnvironment('API_KEY');
     apiName = const String.fromEnvironment('API_NAME');
+    apiSessionKey = const String.fromEnvironment('API_SESSION_KEY');
+    apiSessionName = const String.fromEnvironment('API_SESSION_NAME');
     apiGenerationEndpoint =
         const String.fromEnvironment('api_generation_endpoint');
     apiFetchEndpoint = const String.fromEnvironment('api_fetch_endpoint');
@@ -57,6 +61,7 @@ class _DashboardState extends State<Dashboard> {
 
     imageRepository = ImageRepository(systemPreferences, refresh);
     playbackState = PlaybackState(imageRepository, systemPreferences);
+    generationPreferences = GenerationPreferences();
     if (directDownload) {
       txtToImage = TxtToImageDirect(playbackState, imageRepository, focusNode,
           systemPreferences, generationPreferences);
@@ -64,6 +69,8 @@ class _DashboardState extends State<Dashboard> {
       txtToImage = TxtToImage(playbackState, imageRepository, focusNode,
           systemPreferences, generationPreferences);
     }
+    generationPreferences.init(
+        txtToImage.allmodels().length, txtToImage.allsamplers().length);
     keyboardManager =
         KeyboardManager(playbackState, imageRepository, carouselController);
     if (kDebugMode) {
@@ -194,12 +201,14 @@ class _DashboardState extends State<Dashboard> {
                                 child: Card(
                                   color: Colors.black,
                                   child: SettingsWidget(
+                                    txtToImage: txtToImage,
                                     systemPreferences: systemPreferences,
                                     showActions: true,
                                     orientation: orientation,
                                     refreshCallback: () {
                                       setState(() {});
                                     },
+                                    txtToImageInterface: txtToImage,
                                     generationPreferences:
                                         generationPreferences,
                                     controller: controller,
@@ -209,6 +218,8 @@ class _DashboardState extends State<Dashboard> {
                                       setState,
                                       apiKey,
                                       apiName,
+                                      apiSessionKey,
+                                      apiSessionName,
                                       apiGenerationEndpoint,
                                       apiFetchEndpoint,
                                       controller.text,
@@ -260,10 +271,13 @@ class _DashboardState extends State<Dashboard> {
                       controller2: controller2,
                       controller: controller,
                       orientation: orientation,
+                      txtToImage: txtToImage,
                       multispanCallback: () => txtToImage.multiSpan(
                         setState,
                         apiKey,
                         apiName,
+                        apiSessionKey,
+                        apiSessionName,
                         apiGenerationEndpoint,
                         apiFetchEndpoint,
                         controller.text,
@@ -303,6 +317,7 @@ class _DashboardState extends State<Dashboard> {
                   flex: 5,
                   child: SettingsWidget(
                     systemPreferences: systemPreferences,
+                    txtToImageInterface: txtToImage,
                     orientation: orientation,
                     showActions: false,
                     refreshCallback: () {
@@ -314,6 +329,8 @@ class _DashboardState extends State<Dashboard> {
                       setState,
                       apiKey,
                       apiName,
+                      apiSessionKey,
+                      apiSessionName,
                       apiGenerationEndpoint,
                       apiFetchEndpoint,
                       controller.text,
@@ -321,6 +338,7 @@ class _DashboardState extends State<Dashboard> {
                     ),
                     generationPreferences: generationPreferences,
                     playbackState: playbackState,
+                    txtToImage: txtToImage,
                   ),
                 ),
               ],
@@ -338,6 +356,6 @@ class _DashboardState extends State<Dashboard> {
   }
 
   createLabel(Shot s) {
-    return '${s.seed} ${generationPreferences.models[s.model]} ${generationPreferences.samplers[s.sampler]} ${s.cfg} ${s.steps}';
+    return '${s.seed} ${txtToImage.allmodels()[s.model]} ${txtToImage.allsamplers()[s.sampler]} ${s.cfg} ${s.steps}';
   }
 }

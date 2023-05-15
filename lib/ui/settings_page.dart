@@ -2,16 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:green_bush/services/generation_preferences.dart';
 import 'package:green_bush/services/playback_state.dart';
 import 'package:green_bush/services/system_preferences.dart';
+import 'package:green_bush/services/txt_to_image_interface.dart';
 
 class SettingsPage extends StatefulWidget {
   final SystemPreferences systemPreferences;
   final GenerationPreferences generationPreferences;
   final PlaybackState playbackState;
+  final TxtToImageInterface txtToImage;
   const SettingsPage(
       {Key? key,
       required this.systemPreferences,
       required this.generationPreferences,
-      required this.playbackState})
+      required this.playbackState,
+      required this.txtToImage})
       : super(key: key);
 
   @override
@@ -24,16 +27,16 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   void initState() {
-    for (int i = 0; i < widget.generationPreferences.models.length; i++) {
+    for (int i = 0; i < widget.txtToImage.allmodels().length; i++) {
       checkModels.addAll({
-        widget.generationPreferences.models[i]:
-            widget.generationPreferences.isModelEnabled(i)
+        widget.txtToImage.allmodels()[i]:
+            widget.generationPreferences.isModelEnabled(i, widget.txtToImage)
       });
     }
-    for (int i = 0; i < widget.generationPreferences.samplers.length; i++) {
+    for (int i = 0; i < widget.txtToImage.allsamplers().length; i++) {
       checkSamplers.addAll({
-        widget.generationPreferences.samplers[i]:
-            widget.generationPreferences.isSamplerEnabled(i)
+        widget.txtToImage.allsamplers()[i]:
+            widget.generationPreferences.isSamplerEnabled(i, widget.txtToImage)
       });
     }
 
@@ -138,11 +141,11 @@ class _SettingsPageState extends State<SettingsPage> {
                                 setState(() {
                                   if (value != null) {
                                     checkModels[key] = value;
-                                    final index = widget
-                                        .generationPreferences.models
+                                    final index = widget.txtToImage
+                                        .allmodels()
                                         .indexOf(key);
                                     widget.generationPreferences
-                                        .toggleModel(index);
+                                        .toggleModel(index, widget.txtToImage);
                                   }
                                 });
                               },
@@ -169,11 +172,11 @@ class _SettingsPageState extends State<SettingsPage> {
                                 setState(() {
                                   if (value != null) {
                                     checkSamplers[key] = value;
-                                    final index = widget
-                                        .generationPreferences.samplers
+                                    final index = widget.txtToImage
+                                        .allsamplers()
                                         .indexOf(key);
-                                    widget.generationPreferences
-                                        .toggleSampler(index);
+                                    widget.generationPreferences.toggleSampler(
+                                        index, widget.txtToImage);
                                   }
                                 });
                               },
