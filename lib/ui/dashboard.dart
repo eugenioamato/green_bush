@@ -26,7 +26,8 @@ class Dashboard extends StatefulWidget {
   State<Dashboard> createState() => _DashboardState();
 }
 
-class _DashboardState extends State<Dashboard> {
+class _DashboardState extends State<Dashboard>
+    with SingleTickerProviderStateMixin {
   final TextEditingController controller = TextEditingController()
     ..text = "Green bush, awesome, ";
   final TextEditingController controller2 = TextEditingController()
@@ -81,13 +82,24 @@ class _DashboardState extends State<Dashboard> {
       systemPreferences.setRange(50);
       systemPreferences.maxThreads = 50;
     }
+    _animationController.addListener(() {
+      if (_animationController.isCompleted) {
+        _animationController.reset();
+      }
+    });
     super.initState();
   }
+
+  late final _animationController = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 500),
+  );
 
   void runAnimation() {
     if (kDebugMode) {
       print('running animation');
     }
+    _animationController.forward();
   }
 
   FocusNode focusNode = FocusNode();
@@ -97,6 +109,7 @@ class _DashboardState extends State<Dashboard> {
     controller.dispose();
     controller2.dispose();
     imageRepository.clearCache();
+    _animationController.dispose();
     Wakelock.disable();
     super.dispose();
   }
@@ -140,6 +153,21 @@ class _DashboardState extends State<Dashboard> {
                           txtToImage: txtToImage,
                         ),
                       ),
+                      Center(
+                          child: AnimatedBuilder(
+                        animation: _animationController,
+                        child: const Icon(
+                          Icons.heart_broken,
+                          color: Colors.red,
+                          size: 32,
+                        ),
+                        builder: (context, child) {
+                          return Transform.scale(
+                            scale: _animationController.value,
+                            child: child,
+                          );
+                        },
+                      )),
                       Align(
                         alignment: const Alignment(0.95, -0.95),
                         child: Icon((totalThreads >

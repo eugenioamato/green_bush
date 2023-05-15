@@ -272,7 +272,7 @@ class TxtToImageDirect implements TxtToImageInterface {
     int index = 0;
 
     for (int model = 0; model < allmodels().length; model++) {
-      if (true) {
+      if (generationPreferences.selectedModels[model]) {
         for (int sampler = 0; sampler < allsamplers().length; sampler++) {
           if (generationPreferences.selectedSamplers[sampler]) {
             for (int cfg = generationPreferences.cfgSliderValue.toInt();
