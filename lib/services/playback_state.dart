@@ -48,25 +48,14 @@ class PlaybackState {
       _page = 0;
       return;
     }
-    r.poolprecache(r.getShot(page), this, true);
+
     int upLimit = page + p.getRange();
     if (upLimit > len) {
       upLimit = len;
     }
 
-    for (int i = 0; i < len; i++) {
-      if ((i < upLimit) &&
-          ((i > (page - p.getRange())) ||
-              ((p.getRange() + page > len) &&
-                  (i < ((page + p.getRange()) % len))))) {
-        r.poolprecache(r.getShot(i), this, false);
-      } else {
-        r.removeFromCache(r.getShot(i));
-      }
-    }
-
     updateSecondarySlider();
-    if (r.getImage(page) == null) {
+    if (r.getBlob(page).isEmpty) {
       if (getAuto()) {
         setAuto(false);
       }
@@ -83,7 +72,7 @@ class PlaybackState {
     int k = getPage();
     int j = k;
     for (int i = getPage(); i < r.getLen(); i++) {
-      if (r.getImage(i) == null) break;
+      if (r.getBlob(i).isEmpty) break;
       k++;
     }
     double result = k - 1.0;
@@ -95,7 +84,7 @@ class PlaybackState {
     }
     bool complete = true;
     for (int i = 0; i < j; i++) {
-      if (r.getImage(i) == null) {
+      if (r.getBlob(i).isEmpty) {
         complete = false;
         break;
       }

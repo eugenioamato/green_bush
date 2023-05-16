@@ -12,8 +12,6 @@ class Thumb extends StatefulWidget {
   final Function setAuto;
   final PlaybackState playbackState;
   final ImageRepository imageRepository;
-  final Function precache;
-  final Function getPrecaching;
   final Function refresh;
   final Function createLabel;
   final TxtToImageInterface txtToImage;
@@ -25,8 +23,6 @@ class Thumb extends StatefulWidget {
     Key? key,
     required this.shot,
     required this.setAuto,
-    required this.precache,
-    required this.getPrecaching,
     required this.refresh,
     required this.playbackState,
     required this.imageRepository,
@@ -60,12 +56,12 @@ class _ThumbState extends State<Thumb> {
             widget.runAnimation();
           },
           child: (widget.shot.url.isEmpty ||
-                  widget.imageRepository.getImage(widget.shot.index) == null)
+                  widget.imageRepository.getBlob(widget.shot.index).isEmpty)
               ? GifView.asset('assets/images/loading.gif')
               : FittedBox(
                   fit: BoxFit.contain,
-                  child: widget.imageRepository.getImage(widget.shot.index),
-                )),
+                  child: Image.memory(
+                      widget.imageRepository.getBlob(widget.shot.index)))),
     );
   }
 }

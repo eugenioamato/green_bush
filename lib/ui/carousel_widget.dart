@@ -57,8 +57,6 @@ class _CarouselWidgetState extends State<CarouselWidget> {
                     imageRepository: widget.imageRepository,
                     shot: widget.imageRepository.getShot(e),
                     setAuto: widget.playbackState.setAuto,
-                    precache: widget.imageRepository.poolprecache,
-                    getPrecaching: widget.imageRepository.getPrecaching,
                     refresh: widget.refresh,
                     playbackState: widget.playbackState,
                     createLabel: widget.createLabel,

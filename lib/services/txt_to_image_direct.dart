@@ -29,7 +29,7 @@ class TxtToImageDirect implements TxtToImageInterface {
     this.generationPreferences,
   ) {
     pool = Pool(systemPreferences.maxThreads,
-        timeout: const Duration(seconds: 60));
+        timeout: const Duration(minutes: 60));
   }
 
   @override
@@ -230,9 +230,7 @@ class TxtToImageDirect implements TxtToImageInterface {
       print('FINALIZED SHOT $index');
     }
     final blobdata = base64Decode(base64image);
-    final image = Image.memory(blobdata);
     imageRepository.setBlob(index, blobdata);
-    imageRepository.setImage(index, image);
 
     imageRepository.addShot(index, updatedShot);
     systemPreferences.activeThreads--;

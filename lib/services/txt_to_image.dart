@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
+import 'dart:ui';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
@@ -166,6 +167,10 @@ class TxtToImage implements TxtToImageInterface {
         return;
       }
 
+      if (kDebugMode) {
+        print('resp:\n$resp');
+      }
+
       final resp2 = jsonDecode(result2.toString());
       if (resp2.containsKey('imageUrl')) {
         url = resp2['imageUrl'];
@@ -205,14 +210,29 @@ class TxtToImage implements TxtToImageInterface {
         job, url, prompt, nprompt, cfg, steps, realSeed, model, sampler, index);
 
     imageRepository.addShot(index, updatedShot);
-    final page = playbackState.getPage();
     if (url.isNotEmpty) {
-      if ((index - page <= systemPreferences.getRange()) &&
-          (index - page >= 0)) {
-        if (!imageRepository.getPrecaching().contains(job)) {
-          imageRepository.poolprecache(updatedShot, playbackState, false);
+      Image.network(url)
+          .image
+          .resolve(const ImageConfiguration())
+          .addListener(ImageStreamListener((image, synchronousCall) async {
+        final data = await image.image.toByteData(format: ImageByteFormat.png);
+        if (data != null) {
+          imageRepository.setBlob(
+              updatedShot.index, (data.buffer.asUint8List()));
+          setState(() {});
         }
-      }
+        else{
+          if (kDebugMode) {
+            print('error resolving image $updatedShot ');
+          }
+          systemPreferences.errors++;
+        }
+      },onError: (e,stack){
+            if (kDebugMode) {
+              print('error resolving image $updatedShot \e $e $stack');
+            }
+            systemPreferences.errors++;
+      }));
     }
     systemPreferences.activeThreads--;
     setState(() {});
