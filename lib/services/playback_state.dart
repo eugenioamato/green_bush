@@ -48,6 +48,7 @@ class PlaybackState {
       _page = 0;
       return;
     }
+    r.poolprecache(r.getShot(page), this, true);
     int upLimit = page + p.getRange();
     if (upLimit > len) {
       upLimit = len;

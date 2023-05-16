@@ -54,6 +54,10 @@ class ImageRepository {
   Set<String> getPrecaching() => precaching;
 
   void poolprecache(Shot s, PlaybackState playbackState, bool priority) {
+    if (getBlob(s.index).isNotEmpty) {
+      setImage(s.index, Image.memory(getBlob(s.index)));
+      return;
+    }
     if (priority) {
       _precache(s, playbackState);
     } else {
@@ -65,6 +69,8 @@ class ImageRepository {
   }
 
   void _precache(Shot s, PlaybackState playbackState) {
+    if ((getPrecaching().contains(s.id))) return;
+
     if (getImage(s.index) != null) return;
     final url = s.url;
     if (url.isEmpty) return;
@@ -74,8 +80,6 @@ class ImageRepository {
       }
       return;
     }
-
-    if ((getPrecaching().contains(s.id))) return;
 
     getPrecaching().add(s.id);
     if (kDebugMode) {

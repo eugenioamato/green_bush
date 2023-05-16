@@ -206,7 +206,7 @@ class TxtToImageDirect implements TxtToImageInterface {
           resp2['jobRec']['response'].containsKey('images')) {
         base64image = resp2['jobRec']['response']['images'].first;
       } else {
-        if ((resp2['success'] == 'false') || (r > 20)) {
+        if ((resp2['success'] == 'false') || (r > 540)) {
           if (kDebugMode) {
             print('failed job with:\n$resp2');
           }

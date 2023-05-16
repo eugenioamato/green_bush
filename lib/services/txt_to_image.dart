@@ -78,7 +78,6 @@ class TxtToImage implements TxtToImageInterface {
       repeatIndex) async {
     if (repeatIndex > 3) {
       setState(() {
-        systemPreferences.activeThreads--;
         systemPreferences.errors++;
       });
       return;
