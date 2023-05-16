@@ -56,6 +56,7 @@ class ImageRepository {
   void poolprecache(Shot s, PlaybackState playbackState, bool priority) {
     if (getBlob(s.index).isNotEmpty) {
       setImage(s.index, Image.memory(getBlob(s.index)));
+      refresh();
       return;
     }
     if (priority) {

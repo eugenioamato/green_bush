@@ -78,7 +78,7 @@ class _CarouselWidgetState extends State<CarouselWidget> {
             enableInfiniteScroll: false,
             autoPlayInterval:
                 Duration(milliseconds: widget.playbackState.getAutoDuration()),
-            viewportFraction: 1.0,
+            viewportFraction: 0.99,
           ),
         ),
       ),
