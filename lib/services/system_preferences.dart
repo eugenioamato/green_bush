@@ -5,6 +5,8 @@ class SystemPreferences {
   int totalrenders = 0;
 
   int activeDownloads = 0;
+
+  int errors = 0;
   int getActiveDownloads() => activeDownloads;
 
   int getActiveThreads() => activeThreads;

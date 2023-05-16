@@ -130,6 +130,7 @@ class _DashboardState extends State<Dashboard>
               : (imageRepository.getSrc().length) - 1;
           final totalThreads = systemPreferences.getActiveThreads();
           final totalDownloads = systemPreferences.getActiveDownloads();
+          final totalErrors=systemPreferences.errors;
           if (orientation == Orientation.landscape) {
             return Flex(
               direction: Axis.vertical,
@@ -174,7 +175,7 @@ class _DashboardState extends State<Dashboard>
                       ),
                       Align(
                           alignment: const Alignment(0.95, -0.85),
-                          child: Text('$totalThreads/$totalDownloads')
+                          child: Text('$totalThreads/$totalDownloads/$totalErrors')
                           //color: (Colors.green),
                           ),
                       ((imageRepository.getSrc().isNotEmpty) &&

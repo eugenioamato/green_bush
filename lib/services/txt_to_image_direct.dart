@@ -129,8 +129,8 @@ class TxtToImageDirect implements TxtToImageInterface {
         "cfg_scale": cfg,
         "seed": seed
       },
-      "sd_user_id": "972bf9cc-72a4-4436-aae3-fa470bab1ec3",
-      "sd_session_id": "972bf9cc-72a4-4436-aae3-fa470bab1ec3",
+      apiName: apiKey,
+      apiSessionName: apiSession,
       "columnIndex": 0
     };
 
@@ -142,9 +142,15 @@ class TxtToImageDirect implements TxtToImageInterface {
           data: str,
           options: Options(headers: {
             apiName: apiKey,
-            "sd_session_id": "972bf9cc-72a4-4436-aae3-fa470bab1ec3",
-            'accept': 'application/json',
-            'content-type': 'application/json'
+            apiSessionName: apiSession,
+            'accept': 'application/json, text/plain, */*',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Accept-Language': 'it-IT,it;q=0.9',
+            'Connection': 'keep-alive',
+            'DNT': 1,
+            'Host': 'api.curtail.ai',
+            'Origin': 'https://www.catbird.ai',
+            'Referer': 'https://www.catbird.ai/',
           }));
     } on Exception catch (e) {
       if (kDebugMode) {
@@ -162,7 +168,8 @@ class TxtToImageDirect implements TxtToImageInterface {
     imageRepository.addShot(index, earlyShot);
 
     String base64image = '';
-    Future.delayed(const Duration(seconds: 10));
+    Future.delayed(const Duration(seconds: 30));
+    setState(() {});
 
     int r = 0;
     do {
@@ -170,7 +177,14 @@ class TxtToImageDirect implements TxtToImageInterface {
       try {
         result2 = await dio.get("$apiFetchEndpoint$job",
             options: Options(headers: {
-              'accept': 'application/json',
+              'accept': 'application/json, text/plain, */*',
+              'Accept-Encoding': 'gzip, deflate, br',
+              'Accept-Language': 'it-IT,it;q=0.9',
+              'Connection': 'keep-alive',
+              'DNT': 1,
+              'Host': 'api.curtail.ai',
+              'Origin': 'https://www.catbird.ai',
+              'Referer': 'https://www.catbird.ai/',
             }));
       } on Exception catch (e) {
         if (kDebugMode) {
@@ -192,8 +206,7 @@ class TxtToImageDirect implements TxtToImageInterface {
           resp2['jobRec']['response'].containsKey('images')) {
         base64image = resp2['jobRec']['response']['images'].first;
       } else {
-        if ((resp2['success'] == 'false') ||
-            ((r > 22) && (resp2['status'] != 'queued'))) {
+        if ((resp2['success'] == 'false') || (r > 20)) {
           if (kDebugMode) {
             print('failed job with:\n$resp2');
           }
@@ -201,12 +214,13 @@ class TxtToImageDirect implements TxtToImageInterface {
               apiGenerationEndpoint, apiFetchEndpoint, repeatIndex, upscale);
           return;
         }
-        await Future.delayed(const Duration(seconds: 5));
+
         if (kDebugMode) {
           print('retry d:$job r=$r');
         }
         r++;
       }
+      await Future.delayed(const Duration(seconds: 5));
     } while (base64image.isEmpty);
 
     final updatedShot = Shot(
@@ -227,25 +241,13 @@ class TxtToImageDirect implements TxtToImageInterface {
 
   void eraseOrRedo(Shot s, setState, apiKey, apiName, apiGenerationEnpoint,
       apiFetchEndpoint, repeatIndex, upscale) {
-    /*
-    systemPreferences.activeThreads--;
-    startGeneration(
-        s.index,
-        s.prompt,
-        s.nprompt,
-        s.model,
-        s.sampler,
-        s.cfg,
-        s.steps,
-        s.seed,
-        upscale,
-        apiKey,
-        apiName,
-        apiGenerationEnpoint,
-        apiFetchEndpoint,
-        setState,
-        repeatIndex + 1);
-  */
+    imageRepository.addShot(s.index, fakeShot(s.index));
+    imageRepository.setBlob(s.index, Uint8List(0));
+
+    setState(() {
+      systemPreferences.activeThreads--;
+      systemPreferences.errors++;
+    });
   }
 
   @override
@@ -253,7 +255,6 @@ class TxtToImageDirect implements TxtToImageInterface {
       apiGenerationEndpoint, apiFetchEndpoint, prompt, nprompt) async {
     playbackState.setAuto(false);
     imageRepository.clearCache();
-
     playbackState.setPage(0, () {});
     playbackState.setLoading(0.0);
     focusNode.requestFocus();
