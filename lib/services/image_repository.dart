@@ -53,14 +53,18 @@ class ImageRepository {
   Set<String> precaching = {};
   Set<String> getPrecaching() => precaching;
 
-  void poolprecache(Shot s, PlaybackState playbackState) {
-    if (s.url.length > 1) {
-      pool.withResource(() => _precache(s, playbackState));
+  void poolprecache(Shot s, PlaybackState playbackState, bool priority) {
+    if (priority) {
+      _precache(s, playbackState);
+    } else {
+      if (precaching.length > systemPreferences.maxDownloads) return;
+      if (s.url.length > 1) {
+        pool.withResource(() => _precache(s, playbackState));
+      }
     }
   }
 
   void _precache(Shot s, PlaybackState playbackState) {
-    if (precaching.length > systemPreferences.maxDownloads) return;
     if (getImage(s.index) != null) return;
     final url = s.url;
     if (url.isEmpty) return;
@@ -78,7 +82,7 @@ class ImageRepository {
       print('starting precache ${s.id}');
     }
 
-    refresh();
+    //refresh();
     late final Image image;
     try {
       image = Image(

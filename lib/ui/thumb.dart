@@ -47,7 +47,7 @@ class _ThumbState extends State<Thumb> {
     if (widget.shot.url.isNotEmpty &&
         widget.imageRepository.getImage(widget.shot.index) == null) {
       if (!widget.getPrecaching().contains(widget.shot.id)) {
-        widget.precache(widget.shot, widget.playbackState);
+        widget.precache(widget.shot, widget.playbackState, true);
       }
     }
     if (kDebugMode) {

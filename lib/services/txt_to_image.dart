@@ -77,6 +77,10 @@ class TxtToImage implements TxtToImageInterface {
       setState,
       repeatIndex) async {
     if (repeatIndex > 3) {
+      setState(() {
+        systemPreferences.activeThreads--;
+        systemPreferences.errors++;
+      });
       return;
     }
     if (kDebugMode) {
@@ -207,7 +211,7 @@ class TxtToImage implements TxtToImageInterface {
       if ((index - page <= systemPreferences.getRange()) &&
           (index - page >= 0)) {
         if (!imageRepository.getPrecaching().contains(job)) {
-          imageRepository.poolprecache(updatedShot, playbackState);
+          imageRepository.poolprecache(updatedShot, playbackState, false);
         }
       }
     }

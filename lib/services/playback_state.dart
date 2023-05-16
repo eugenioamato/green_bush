@@ -58,7 +58,7 @@ class PlaybackState {
           ((i > (page - p.getRange())) ||
               ((p.getRange() + page > len) &&
                   (i < ((page + p.getRange()) % len))))) {
-        r.poolprecache(r.getShot(i), this);
+        r.poolprecache(r.getShot(i), this, false);
       } else {
         r.removeFromCache(r.getShot(i));
       }
