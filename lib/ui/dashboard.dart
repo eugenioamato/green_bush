@@ -169,18 +169,6 @@ class _DashboardState extends State<Dashboard>
                               Text('$totalThreads/$totalDownloads/$totalErrors')
                           //color: (Colors.green),
                           ),
-                      ((imageRepository.getSrc().isNotEmpty) &&
-                              (playbackState.getPage() <
-                                  imageRepository.getSrc().length))
-                          ? Align(
-                              alignment: const Alignment(0, 0.90),
-                              child: Text(
-                                '${createLabel(imageRepository.getShot(playbackState.getPage()))}',
-                                textAlign: TextAlign.center,
-                              )
-                              //color: (Colors.green),
-                              )
-                          : Container(),
                       Align(
                         alignment: const Alignment(-0.95, 0.95),
                         child: KeyboardListener(
@@ -313,7 +301,7 @@ class _DashboardState extends State<Dashboard>
                     child: Align(
                   alignment: Alignment.bottomCenter,
                   child: Text(
-                    '${playbackState.getPage()} / ${imageRepository.getSrc().length} / ${systemPreferences.totalrenders}',
+                    '${playbackState.getPage() + 1} / ${imageRepository.getSrc().length} / ${systemPreferences.totalrenders}',
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 )),
