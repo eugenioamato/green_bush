@@ -97,6 +97,8 @@ class TxtToImage implements TxtToImageInterface {
       "aspect_ratio": "landscape",
       "seed": seed,
       "upscale": upscale,
+      "restore_faces": true,
+      "tiling": false,
     };
     final str = jsonEncode(data);
     final Response<dynamic> result;
@@ -215,7 +217,7 @@ class TxtToImage implements TxtToImageInterface {
                   updatedShot.index, (data.buffer.asUint8List()));
               playbackState.setLoading(
                   imageRepository.loadedElements().length.toDouble());
-              systemPreferences.activeDownloads++;
+              systemPreferences.activeDownloads--;
               setState(() {});
             } else {
               if (kDebugMode) {
@@ -229,6 +231,7 @@ class TxtToImage implements TxtToImageInterface {
               print('error resolving image $updatedShot \n $e $stack');
             }
             systemPreferences.errors++;
+            systemPreferences.activeDownloads--;
           }));
     }
     systemPreferences.activeThreads--;
