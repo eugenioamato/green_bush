@@ -38,11 +38,6 @@ class PlaybackState {
       return;
     }
 
-    int upLimit = page + p.getRange();
-    if (upLimit > len) {
-      upLimit = len;
-    }
-
     _page = page;
 
     refresh();

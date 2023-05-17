@@ -174,7 +174,9 @@ class TxtToImage implements TxtToImageInterface {
         }
       } else {
         if ((resp2['status'] == 'failed') ||
-            ((r > 25) && (resp2['status'] != 'queued'))) {
+            ((r > 25) &&
+                (resp2['status'] != 'queued') &&
+                (resp2['status'] != 'generating'))) {
           if (kDebugMode) {
             print('failed job with:\n$resp2');
           }
@@ -201,6 +203,7 @@ class TxtToImage implements TxtToImageInterface {
 
     imageRepository.addShot(index, updatedShot);
     if (url.isNotEmpty) {
+      systemPreferences.activeDownloads++;
       Image.network(url)
           .image
           .resolve(const ImageConfiguration())
@@ -210,12 +213,16 @@ class TxtToImage implements TxtToImageInterface {
             if (data != null) {
               imageRepository.setBlob(
                   updatedShot.index, (data.buffer.asUint8List()));
+              playbackState.setLoading(
+                  imageRepository.loadedElements().length.toDouble());
+              systemPreferences.activeDownloads++;
               setState(() {});
             } else {
               if (kDebugMode) {
                 print('error resolving image $updatedShot ');
               }
               systemPreferences.errors++;
+              systemPreferences.activeDownloads--;
             }
           }, onError: (e, stack) {
             if (kDebugMode) {

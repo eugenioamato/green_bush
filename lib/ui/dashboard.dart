@@ -115,9 +115,9 @@ class _DashboardState extends State<Dashboard>
         resizeToAvoidBottomInset: false,
         backgroundColor: Colors.black,
         body: OrientationBuilder(builder: (context, orientation) {
-          final total = (imageRepository.getSrc().length) < 2
+          final total = (imageRepository.loadedElements().length) < 2
               ? 1
-              : (imageRepository.getSrc().length) - 1;
+              : (imageRepository.loadedElements().length) - 1;
           final totalThreads = systemPreferences.getActiveThreads();
           final totalDownloads = systemPreferences.getActiveDownloads();
           final totalErrors = systemPreferences.errors;
@@ -243,9 +243,9 @@ class _DashboardState extends State<Dashboard>
                         ),
                       ),
                       Align(
-                        alignment: const Alignment(0, 0.75),
+                        alignment: const Alignment(0.90, 0.99),
                         child: Text(
-                          '${playbackState.getPage() + 1} / ${imageRepository.getSrc().length} / ${systemPreferences.totalrenders}',
+                          getDurations(),
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
                       ),
@@ -260,6 +260,7 @@ class _DashboardState extends State<Dashboard>
                     child: ProgressSlider(
                       playbackState: playbackState,
                       carouselController: carouselController,
+                      imageRepository: imageRepository,
                       total: total,
                       refresh: refresh,
                     ),
@@ -299,9 +300,9 @@ class _DashboardState extends State<Dashboard>
                     )),
                 Flexible(
                     child: Align(
-                  alignment: Alignment.bottomCenter,
+                  alignment: const Alignment(0.75, 0.90),
                   child: Text(
-                    '${playbackState.getPage() + 1} / ${imageRepository.getSrc().length} / ${systemPreferences.totalrenders}',
+                    getDurations(),
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 )),
@@ -309,6 +310,7 @@ class _DashboardState extends State<Dashboard>
                     child: ProgressSlider(
                         playbackState: playbackState,
                         carouselController: carouselController,
+                        imageRepository: imageRepository,
                         total: total,
                         refresh: refresh)),
                 Expanded(
@@ -375,5 +377,23 @@ class _DashboardState extends State<Dashboard>
 
   createLabel(Shot s) {
     return '${s.seed} ${txtToImage.allmodels()[s.model]} ${txtToImage.allsamplers()[s.sampler]} ${s.cfg} ${s.steps}';
+  }
+
+  String getDurations() {
+    final interval = playbackState.getAutoDuration();
+    final actual =
+        Duration(milliseconds: (playbackState.getPage() + 1) * interval);
+    final loaded = Duration(
+        milliseconds: (imageRepository.loadedElements().length) * interval);
+    final total =
+        Duration(milliseconds: (systemPreferences.totalrenders * interval));
+    return '${_printDuration(actual)} / ${_printDuration(loaded)} / ${_printDuration(total)}';
+  }
+
+  String _printDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, "0");
+    String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
+    String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
+    return "$twoDigitMinutes:$twoDigitSeconds";
   }
 }

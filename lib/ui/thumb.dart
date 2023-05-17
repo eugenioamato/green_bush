@@ -52,7 +52,13 @@ class Thumb extends StatelessWidget {
       },
       child: (shot.url.isEmpty || blob.isEmpty)
           ? GifView.asset('assets/images/loading.gif')
-          : FittedBox(fit: BoxFit.contain, child: Image.memory(blob)),
+          : FittedBox(
+              fit: BoxFit.contain,
+              child: Container(
+                constraints: const BoxConstraints(minHeight: 1, minWidth: 1),
+                child: Image.memory(blob),
+              ),
+            ),
     );
   }
 }

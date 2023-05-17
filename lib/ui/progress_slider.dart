@@ -1,10 +1,12 @@
 import 'package:carousel_slider/carousel_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:green_bush/services/image_repository.dart';
 import 'package:green_bush/services/playback_state.dart';
 
 class ProgressSlider extends StatefulWidget {
   final PlaybackState playbackState;
   final CarouselController carouselController;
+  final ImageRepository imageRepository;
   final int total;
   final Function refresh;
   const ProgressSlider(
@@ -12,7 +14,8 @@ class ProgressSlider extends StatefulWidget {
       required this.playbackState,
       required this.carouselController,
       required this.total,
-      required this.refresh})
+      required this.refresh,
+      required this.imageRepository})
       : super(key: key);
 
   @override
@@ -22,10 +25,10 @@ class ProgressSlider extends StatefulWidget {
 class _ProgressSliderState extends State<ProgressSlider> {
   @override
   Widget build(BuildContext context) {
-    final double loaded = (widget.playbackState.getLoading());
+    final double loaded = (widget.playbackState.getLoading().toDouble() - 1);
     return Slider(
       min: 0,
-      max: widget.total.toDouble(),
+      max: widget.imageRepository.loadedElements().length.toDouble(),
       secondaryTrackValue:
           ((loaded >= 0) && (loaded <= widget.total)) ? loaded : 0.0,
       secondaryActiveColor: Colors.lightGreen,
