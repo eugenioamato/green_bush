@@ -38,22 +38,21 @@ class Thumb extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return IntrinsicHeight(
-      child: GestureDetector(
-          onTap: () {
-            setAuto(false);
-            FileService().saveFile(
-              blob,
-              label,
-              controller.text,
-              controller2.text,
-              extension,
-            );
-            runAnimation();
-          },
-          child: (shot.url.isEmpty || blob.isEmpty)
-              ? GifView.asset('assets/images/loading.gif')
-              : FittedBox(fit: BoxFit.contain, child: Image.memory(blob))),
+    return GestureDetector(
+      onTap: () {
+        setAuto(false);
+        FileService().saveFile(
+          blob,
+          label,
+          controller.text,
+          controller2.text,
+          extension,
+        );
+        runAnimation();
+      },
+      child: (shot.url.isEmpty || blob.isEmpty)
+          ? GifView.asset('assets/images/loading.gif')
+          : FittedBox(fit: BoxFit.contain, child: Image.memory(blob)),
     );
   }
 }

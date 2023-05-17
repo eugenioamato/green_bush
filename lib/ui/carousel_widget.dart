@@ -47,40 +47,38 @@ class _CarouselWidgetState extends State<CarouselWidget> {
       autofocus: true,
       onKeyEvent: (event) =>
           widget.keyboardManager.manageKeyEvent(event, widget.refresh),
-      child: IntrinsicHeight(
-        child: CarouselSlider(
-          items: widget.imageRepository
-              .loadedElements()
-              .map((e) => th.Thumb(
-                    runAnimation: widget.runAnimation,
-                    controller: widget.controller,
-                    controller2: widget.controller2,
-                    imageRepository: widget.imageRepository,
-                    shot: widget.imageRepository.getShot(e),
-                    setAuto: widget.playbackState.setAuto,
-                    refresh: widget.refresh,
-                    playbackState: widget.playbackState,
-                    label:
-                        widget.createLabel(widget.imageRepository.getShot(e)),
-                    extension: widget.txtToImage.extension,
-                    blob: widget.imageRepository.getBlob(e),
-                  ))
-              .toList(),
-          carouselController: widget.carouselController,
-          options: CarouselOptions(
-            initialPage: widget.playbackState.getPage(),
-            onPageChanged: (index, reason) {
-              widget.playbackState.setPage(index, widget.refresh);
-            },
-            pauseAutoPlayOnTouch: true,
-            autoPlay: widget.playbackState.getAuto(),
-            autoPlayAnimationDuration: const Duration(milliseconds: 1),
-            scrollDirection: Axis.vertical,
-            enableInfiniteScroll: false,
-            autoPlayInterval:
-                Duration(milliseconds: widget.playbackState.getAutoDuration()),
-            viewportFraction: 0.99,
-          ),
+      child: CarouselSlider(
+        items: widget.imageRepository
+            .loadedElements()
+            .map((e) => th.Thumb(
+                  runAnimation: widget.runAnimation,
+                  controller: widget.controller,
+                  controller2: widget.controller2,
+                  imageRepository: widget.imageRepository,
+                  shot: widget.imageRepository.getShot(e),
+                  setAuto: widget.playbackState.setAuto,
+                  refresh: widget.refresh,
+                  playbackState: widget.playbackState,
+                  label:
+                      widget.createLabel(widget.imageRepository.getShot(e)),
+                  extension: widget.txtToImage.extension,
+                  blob: widget.imageRepository.getBlob(e),
+                ))
+            .toList(),
+        carouselController: widget.carouselController,
+        options: CarouselOptions(
+          initialPage: widget.playbackState.getPage(),
+          onPageChanged: (index, reason) {
+            widget.playbackState.setPage(index, widget.refresh);
+          },
+          pauseAutoPlayOnTouch: true,
+          autoPlay: widget.playbackState.getAuto(),
+          autoPlayAnimationDuration: const Duration(milliseconds: 1),
+          scrollDirection: Axis.vertical,
+          enableInfiniteScroll: false,
+          autoPlayInterval:
+              Duration(milliseconds: widget.playbackState.getAutoDuration()),
+          viewportFraction: 0.99,
         ),
       ),
     );
