@@ -108,9 +108,7 @@ class TxtToImageDirect implements TxtToImageInterface {
     if (repeatIndex > 3) {
       return;
     }
-    if (kDebugMode) {
-      print('starting from $prompt');
-    }
+
     systemPreferences.activeThreads++;
     final placeholderShot = Shot(index.toString(), '', prompt, nprompt, cfg,
         steps, seed, model, sampler, index);
@@ -196,9 +194,6 @@ class TxtToImageDirect implements TxtToImageInterface {
       }
 
       final resp2 = jsonDecode(result2.toString());
-      if (kDebugMode) {
-        print(result2.toString());
-      }
 
       if (resp2.containsKey('jobRec') &&
           resp2['jobRec'].containsKey('response') &&
@@ -215,9 +210,6 @@ class TxtToImageDirect implements TxtToImageInterface {
           return;
         }
 
-        if (kDebugMode) {
-          print('retry d:$job r=$r');
-        }
         r++;
       }
       await Future.delayed(const Duration(seconds: 5));
@@ -226,9 +218,6 @@ class TxtToImageDirect implements TxtToImageInterface {
     final updatedShot = Shot(
         job, '/', prompt, nprompt, cfg, steps, seed, model, sampler, index);
 
-    if (kDebugMode) {
-      print('FINALIZED SHOT $index');
-    }
     final blobdata = base64Decode(base64image);
     imageRepository.setBlob(index, blobdata);
 

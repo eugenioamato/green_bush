@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:green_bush/services/system_preferences.dart';
 import 'image_repository.dart';
 
@@ -21,9 +20,6 @@ class PlaybackState {
   double _loading = 0.0;
   double getLoading() => _loading;
   void setLoading(double rate) {
-    if (kDebugMode) {
-      print('setting load to $rate');
-    }
     _loading = rate;
   }
 
@@ -77,9 +73,6 @@ class PlaybackState {
     }
     double result = k - 1.0;
     if (result != double.nan && result >= 0 && result <= r.getLen()) {
-      if (kDebugMode) {
-        print('setting load to $result');
-      }
       setLoading(result);
     }
     bool complete = true;

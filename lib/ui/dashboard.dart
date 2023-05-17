@@ -8,7 +8,6 @@ import 'package:green_bush/ui/actions_widget.dart';
 import 'package:green_bush/ui/carousel_widget.dart';
 import 'package:green_bush/ui/progress_slider.dart';
 import 'package:green_bush/ui/settings_widget.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:wakelock/wakelock.dart';
 import 'package:green_bush/services/image_repository.dart';
@@ -75,9 +74,6 @@ class _DashboardState extends State<Dashboard>
         txtToImage.allmodels().length, txtToImage.allsamplers().length);
     keyboardManager = KeyboardManager(playbackState, imageRepository,
         carouselController, controller, controller2, txtToImage, runAnimation);
-    if (kDebugMode) {
-      print('API_KEY IS $apiKey');
-    }
 
     if (Platform.isWindows || Platform.isMacOS) {
       systemPreferences.setRange(50);
@@ -97,9 +93,6 @@ class _DashboardState extends State<Dashboard>
   );
 
   void runAnimation() {
-    if (kDebugMode) {
-      print('running animation');
-    }
     _animationController.forward();
   }
 
@@ -122,9 +115,6 @@ class _DashboardState extends State<Dashboard>
         resizeToAvoidBottomInset: false,
         backgroundColor: Colors.black,
         body: OrientationBuilder(builder: (context, orientation) {
-          if (kDebugMode) {
-            print('rebuilding dash');
-          }
           final total = (imageRepository.getSrc().length) < 2
               ? 1
               : (imageRepository.getSrc().length) - 1;

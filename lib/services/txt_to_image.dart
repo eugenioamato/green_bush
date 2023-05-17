@@ -83,9 +83,6 @@ class TxtToImage implements TxtToImageInterface {
       });
       return;
     }
-    if (kDebugMode) {
-      print('starting from $prompt');
-    }
     systemPreferences.activeThreads++;
     final placeholderShot = Shot(index.toString(), '', prompt, nprompt, cfg,
         steps, seed, model, sampler, index);
@@ -167,10 +164,6 @@ class TxtToImage implements TxtToImageInterface {
         return;
       }
 
-      if (kDebugMode) {
-        print('resp:\n$resp');
-      }
-
       final resp2 = jsonDecode(result2.toString());
       if (resp2.containsKey('imageUrl')) {
         url = resp2['imageUrl'];
@@ -199,9 +192,6 @@ class TxtToImage implements TxtToImageInterface {
           return;
         }
         await Future.delayed(const Duration(seconds: 1));
-        if (kDebugMode) {
-          print('retry d:$job r=$r');
-        }
         r++;
       }
     } while (url.isEmpty);
@@ -215,24 +205,24 @@ class TxtToImage implements TxtToImageInterface {
           .image
           .resolve(const ImageConfiguration())
           .addListener(ImageStreamListener((image, synchronousCall) async {
-        final data = await image.image.toByteData(format: ImageByteFormat.png);
-        if (data != null) {
-          imageRepository.setBlob(
-              updatedShot.index, (data.buffer.asUint8List()));
-          setState(() {});
-        }
-        else{
-          if (kDebugMode) {
-            print('error resolving image $updatedShot ');
-          }
-          systemPreferences.errors++;
-        }
-      },onError: (e,stack){
+            final data =
+                await image.image.toByteData(format: ImageByteFormat.png);
+            if (data != null) {
+              imageRepository.setBlob(
+                  updatedShot.index, (data.buffer.asUint8List()));
+              setState(() {});
+            } else {
+              if (kDebugMode) {
+                print('error resolving image $updatedShot ');
+              }
+              systemPreferences.errors++;
+            }
+          }, onError: (e, stack) {
             if (kDebugMode) {
               print('error resolving image $updatedShot \e $e $stack');
             }
             systemPreferences.errors++;
-      }));
+          }));
     }
     systemPreferences.activeThreads--;
     setState(() {});
