@@ -32,9 +32,7 @@ class _ProgressSliderState extends State<ProgressSlider> {
       divisions: widget.total,
       thumbColor: Colors.green,
       inactiveColor: Colors.yellow.withOpacity(0.2),
-      activeColor: widget.playbackState.getComplete()
-          ? Colors.lightGreen
-          : Colors.yellow.withOpacity(0.2),
+      activeColor: Colors.lightGreen,
       value: (widget.playbackState.getPage() > widget.total
           ? widget.total.toDouble()
           : widget.playbackState.getPage().toDouble()),

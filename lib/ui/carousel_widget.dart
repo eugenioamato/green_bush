@@ -42,8 +42,6 @@ class CarouselWidget extends StatefulWidget {
 class _CarouselWidgetState extends State<CarouselWidget> {
   @override
   Widget build(BuildContext context) {
-    final elements = List.generate(widget.imageRepository.getLen(), (v) => v)
-        .where((e) => widget.imageRepository.getBlob(e).isNotEmpty);
     return KeyboardListener(
       focusNode: widget.focusNode,
       autofocus: true,
@@ -51,7 +49,8 @@ class _CarouselWidgetState extends State<CarouselWidget> {
           widget.keyboardManager.manageKeyEvent(event, widget.refresh),
       child: IntrinsicHeight(
         child: CarouselSlider(
-          items: elements
+          items: widget.imageRepository
+              .loadedElements()
               .map((e) => th.Thumb(
                     runAnimation: widget.runAnimation,
                     controller: widget.controller,

@@ -6,13 +6,6 @@ class PlaybackState {
   final SystemPreferences p;
   PlaybackState(this.r, this.p);
 
-  bool _complete = true;
-
-  bool getComplete() => _complete;
-  void setComplete(n) {
-    _complete = n;
-  }
-
   bool _auto = false;
   bool getAuto() => _auto;
   void setAuto(v) => _auto = v;
@@ -50,42 +43,10 @@ class PlaybackState {
       upLimit = len;
     }
 
-    updateSecondarySlider();
-    if (r.getBlob(page).isEmpty) {
-      if (getAuto()) {
-        setAuto(false);
-      }
-    }
     _page = page;
 
     refresh();
   }
 
   int getPage() => _page;
-
-  void updateSecondarySlider() {
-    if (r.getLen() == 0) return;
-    int k = getPage();
-    int j = k;
-    for (int i = getPage(); i < r.getLen(); i++) {
-      if (r.getBlob(i).isEmpty) break;
-      k++;
-    }
-    double result = k - 1.0;
-    if (result != double.nan && result >= 0 && result <= r.getLen()) {
-      setLoading(result);
-    }
-    bool complete = true;
-    for (int i = 0; i < j; i++) {
-      if (r.getBlob(i).isEmpty) {
-        complete = false;
-        break;
-      }
-    }
-    if (complete) {
-      setComplete(true);
-    } else {
-      setComplete(false);
-    }
-  }
 }

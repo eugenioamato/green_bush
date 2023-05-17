@@ -8,7 +8,7 @@ import 'package:green_bush/services/playback_state.dart';
 
 import '../services/file_service.dart';
 
-class Thumb extends StatefulWidget {
+class Thumb extends StatelessWidget {
   final Shot shot;
   final Function setAuto;
   final PlaybackState playbackState;
@@ -37,29 +37,23 @@ class Thumb extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<Thumb> createState() => _ThumbState();
-}
-
-class _ThumbState extends State<Thumb> {
-  @override
   Widget build(BuildContext context) {
     return IntrinsicHeight(
       child: GestureDetector(
           onTap: () {
-            widget.setAuto(false);
+            setAuto(false);
             FileService().saveFile(
-              widget.blob,
-              widget.label,
-              widget.controller.text,
-              widget.controller2.text,
-              widget.extension,
+              blob,
+              label,
+              controller.text,
+              controller2.text,
+              extension,
             );
-            widget.runAnimation();
+            runAnimation();
           },
-          child: (widget.shot.url.isEmpty || widget.blob.isEmpty)
+          child: (shot.url.isEmpty || blob.isEmpty)
               ? GifView.asset('assets/images/loading.gif')
-              : FittedBox(
-                  fit: BoxFit.contain, child: Image.memory(widget.blob))),
+              : FittedBox(fit: BoxFit.contain, child: Image.memory(blob))),
     );
   }
 }

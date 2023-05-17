@@ -39,4 +39,9 @@ class ImageRepository {
     }
     _src.clear();
   }
+
+  Iterable<int> loadedElements() {
+    return List.generate(getLen(), (v) => v)
+        .where((e) => getBlob(e).isNotEmpty);
+  }
 }
