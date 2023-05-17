@@ -219,7 +219,7 @@ class TxtToImage implements TxtToImageInterface {
             }
           }, onError: (e, stack) {
             if (kDebugMode) {
-              print('error resolving image $updatedShot \e $e $stack');
+              print('error resolving image $updatedShot \n $e $stack');
             }
             systemPreferences.errors++;
           }));

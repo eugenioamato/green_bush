@@ -59,8 +59,10 @@ class _CarouselWidgetState extends State<CarouselWidget> {
                     setAuto: widget.playbackState.setAuto,
                     refresh: widget.refresh,
                     playbackState: widget.playbackState,
-                    createLabel: widget.createLabel,
-                    txtToImage: widget.txtToImage,
+                    label:
+                        widget.createLabel(widget.imageRepository.getShot(e)),
+                    extension: widget.txtToImage.extension,
+                    blob: widget.imageRepository.getBlob(e),
                   ))
               .toList(),
           carouselController: widget.carouselController,
