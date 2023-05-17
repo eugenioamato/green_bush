@@ -37,5 +37,6 @@ class ImageRepository {
         setBlob(i, Uint8List(0));
       }
     }
+    _src.clear();
   }
 }
