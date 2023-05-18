@@ -21,7 +21,7 @@ class FileService {
 
     String label = '$prompt $nprompt $idd';
     String id =
-        label.replaceAll(' ', '_').replaceAll(',', '_').replaceAll('/', '-');
+        label.replaceAll(' ', '').replaceAll(',', '_').replaceAll('/', '');
 
     try {
       final saveDir =
