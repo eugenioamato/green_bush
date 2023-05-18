@@ -24,11 +24,7 @@ class ImageRepository {
   Shot getShot(int index) =>
       (_src.containsKey(index)) ? _src[index]! : fakeShot(index);
   void addShot(int index, Shot s) => _src[index] = s;
-  void removeAt(int index) {
-    _src[index] = fakeShot(index);
-  }
 
-  Iterable<Shot> getSrc() => _src.values;
   int getLen() => _src.length;
 
   void clearCache() {

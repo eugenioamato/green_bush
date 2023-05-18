@@ -182,6 +182,7 @@ class TxtToImage implements TxtToImageInterface {
           if (kDebugMode) {
             print('failed job with:\n$resp2');
           }
+          systemPreferences.errors++;
           eraseOrRedo(
               earlyShot,
               setState,
