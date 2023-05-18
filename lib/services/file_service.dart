@@ -19,9 +19,13 @@ class FileService {
       }
     }
 
-    String label = '$prompt $nprompt $idd';
-    String id =
-        label.replaceAll(' ', '').replaceAll(',', '_').replaceAll('/', '');
+    String label = '$idd.$prompt.$nprompt ';
+    String id = label
+        .replaceAll(' ', '')
+        .replaceAll(',', '_')
+        .replaceAll('/', '')
+        .replaceAll(':', '');
+    id = id.substring(0, 254 - (extension.length));
 
     try {
       final saveDir =
