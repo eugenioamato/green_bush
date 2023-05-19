@@ -38,4 +38,9 @@ class PlaybackState {
   }
 
   int getPage() => _page;
+
+  sort() {
+    setAuto(false);
+    r.sort();
+  }
 }

@@ -34,7 +34,7 @@ class Shot implements Comparable<Shot> {
 
   @override
   int compareTo(Shot other) {
-    if (blob.isNotEmpty && other.blob.isNotEmpty) {
+    if (blob.isNotEmpty && other.blob.isNotEmpty && diff != other.diff) {
       return diff.compareTo(other.diff);
     } else if (prompt == other.prompt) {
       if (nprompt == other.nprompt) {

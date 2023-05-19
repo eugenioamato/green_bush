@@ -119,6 +119,8 @@ class _DashboardState extends State<Dashboard>
           final totalThreads = systemPreferences.getActiveThreads();
           final totalDownloads = systemPreferences.getActiveDownloads();
           final totalErrors = systemPreferences.errors;
+          final totalSorters = systemPreferences.activeSorters;
+
           if (orientation == Orientation.landscape) {
             return Flex(
               direction: Axis.vertical,
@@ -164,8 +166,8 @@ class _DashboardState extends State<Dashboard>
                       ),
                       Align(
                           alignment: const Alignment(0.95, -0.85),
-                          child:
-                              Text('$totalThreads/$totalDownloads/$totalErrors')
+                          child: Text(
+                              '$totalThreads/$totalDownloads/$totalSorters/$totalErrors')
                           //color: (Colors.green),
                           ),
                       Align(
