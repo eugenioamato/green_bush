@@ -1,4 +1,5 @@
 import 'package:carousel_slider/carousel_controller.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:green_bush/services/image_repository.dart';
 import 'package:green_bush/services/playback_state.dart';
@@ -8,6 +9,7 @@ class ProgressSlider extends StatefulWidget {
   final CarouselController carouselController;
   final ImageRepository imageRepository;
   final int total;
+  final int errors;
   final Function refresh;
   const ProgressSlider(
       {Key? key,
@@ -15,7 +17,8 @@ class ProgressSlider extends StatefulWidget {
       required this.carouselController,
       required this.total,
       required this.refresh,
-      required this.imageRepository})
+      required this.imageRepository,
+      required this.errors})
       : super(key: key);
 
   @override
@@ -25,34 +28,68 @@ class ProgressSlider extends StatefulWidget {
 class _ProgressSliderState extends State<ProgressSlider> {
   @override
   Widget build(BuildContext context) {
-    final double loaded = (widget.playbackState.getLoading().toDouble() - 1);
-    return Slider(
-      min: 0,
-      max: widget.imageRepository.loadedElements().length.toDouble(),
-      secondaryTrackValue:
-          ((loaded >= 0) && (loaded <= widget.total)) ? loaded : 0.0,
-      secondaryActiveColor: Colors.lightGreen,
-      divisions: widget.total,
-      thumbColor: Colors.green,
-      inactiveColor: Colors.yellow.withOpacity(0.2),
-      activeColor: Colors.lightGreen,
-      value: (widget.playbackState.getPage() > widget.total
-          ? widget.total.toDouble()
-          : widget.playbackState.getPage().toDouble()),
-      onChangeStart: (newPage) {
-        widget.playbackState.setAuto(false);
-        widget.playbackState.setDisableCaching(true);
-      },
-      onChangeEnd: (newPage) {
-        widget.playbackState.setDisableCaching(false);
-        widget.playbackState
-            .setPage(widget.playbackState.getPage(), widget.refresh);
-      },
-      onChanged: (double value) {
-        setState(() {
-          widget.carouselController.jumpToPage((value).toInt());
-        });
-      },
+    final double loaded =
+        widget.imageRepository.loadedElements().length.toDouble();
+    final errorRatio = widget.errors;
+    final int loadingRatio = widget.total - (loaded.toInt() + errorRatio);
+
+    return Padding(
+      padding: const EdgeInsets.all(12.0),
+      child: Flex(
+        direction: Axis.horizontal,
+        children: [
+          Expanded(
+            flex: loaded.toInt() + 1,
+            child: SliderTheme(
+              data: SliderThemeData(
+                  overlayShape: SliderComponentShape.noOverlay,
+                  thumbColor: Colors.red,
+                  thumbShape:
+                      const RoundSliderThumbShape(enabledThumbRadius: 6)),
+              child: Slider.adaptive(
+                min: 0,
+                max: loaded,
+                inactiveColor: Colors.yellow.withOpacity(0.2),
+                activeColor: Colors.lightGreen,
+                value: (widget.playbackState.getPage() > widget.total
+                    ? widget.total.toDouble()
+                    : widget.playbackState.getPage().toDouble()),
+                onChangeStart: (newPage) {
+                  widget.playbackState.setAuto(false);
+                  widget.playbackState.setDisableCaching(true);
+                },
+                onChangeEnd: (newPage) {
+                  widget.playbackState.setDisableCaching(false);
+                  widget.playbackState
+                      .setPage(widget.playbackState.getPage(), widget.refresh);
+                },
+                onChanged: (double value) {
+                  setState(() {
+                    widget.carouselController.jumpToPage((value).toInt());
+                  });
+                },
+              ),
+            ),
+          ),
+          Expanded(
+              flex: loadingRatio,
+              child: Container(
+                constraints: const BoxConstraints(maxHeight: 4),
+                color: Colors.grey,
+              )),
+          Expanded(
+              flex: errorRatio,
+              child: Container(
+                constraints: const BoxConstraints(maxHeight: 4),
+                decoration: const BoxDecoration(
+                    borderRadius: BorderRadius.only(
+                      bottomRight: Radius.circular(2),
+                      topRight: Radius.circular(2),
+                    ),
+                    color: Colors.red),
+              )),
+        ],
+      ),
     );
   }
 }

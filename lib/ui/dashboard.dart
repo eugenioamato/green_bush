@@ -89,7 +89,7 @@ class _DashboardState extends State<Dashboard>
 
   late final _animationController = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 500),
+    duration: const Duration(milliseconds: 1500),
   );
 
   void runAnimation() {
@@ -115,9 +115,7 @@ class _DashboardState extends State<Dashboard>
         resizeToAvoidBottomInset: false,
         backgroundColor: Colors.black,
         body: OrientationBuilder(builder: (context, orientation) {
-          final total = (imageRepository.loadedElements().length) < 2
-              ? 1
-              : (imageRepository.loadedElements().length) - 1;
+          final total = systemPreferences.totalrenders;
           final totalThreads = systemPreferences.getActiveThreads();
           final totalDownloads = systemPreferences.getActiveDownloads();
           final totalErrors = systemPreferences.errors;
@@ -145,10 +143,11 @@ class _DashboardState extends State<Dashboard>
                           txtToImage: txtToImage,
                         ),
                       ),
-                      Center(
+                      Align(
+                          alignment: const Alignment(-0.94, 0.85),
                           child: LikeWidget(
-                        animationController: _animationController,
-                      )),
+                            animationController: _animationController,
+                          )),
                       Align(
                         alignment: const Alignment(0.95, -0.95),
                         child: Icon((totalThreads >
@@ -262,6 +261,7 @@ class _DashboardState extends State<Dashboard>
                       carouselController: carouselController,
                       imageRepository: imageRepository,
                       total: total,
+                      errors: systemPreferences.errors,
                       refresh: refresh,
                     ),
                   ),
@@ -312,6 +312,7 @@ class _DashboardState extends State<Dashboard>
                         carouselController: carouselController,
                         imageRepository: imageRepository,
                         total: total,
+                        errors: systemPreferences.errors,
                         refresh: refresh)),
                 Expanded(
                   flex: 8,

@@ -12,7 +12,7 @@ class LikeWidget extends StatelessWidget {
       child: const Icon(
         Icons.heart_broken,
         color: Colors.red,
-        size: 32,
+        size: 64,
       ),
       builder: (context, child) {
         return Transform.scale(
