@@ -91,7 +91,7 @@ class ImageRepository {
           min = result;
           next = i.index;
         }
-        if (min < 0.01) break;
+        if (min < 0.05) break;
       }
       if (next < 0) return;
       getShot(next).updateDiff(k);
