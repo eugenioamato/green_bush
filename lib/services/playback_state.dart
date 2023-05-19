@@ -10,12 +10,6 @@ class PlaybackState {
   bool getAuto() => _auto;
   void setAuto(v) => _auto = v;
 
-  double _loading = 0.0;
-  double getLoading() => _loading;
-  void setLoading(double rate) {
-    _loading = rate;
-  }
-
   bool _disableCaching = false;
   void setDisableCaching(v) {
     _disableCaching = v;
@@ -44,9 +38,4 @@ class PlaybackState {
   }
 
   int getPage() => _page;
-
-  sort() {
-    setAuto(false);
-    r.sort();
-  }
 }

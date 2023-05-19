@@ -1,4 +1,5 @@
 import 'package:carousel_slider/carousel_slider.dart';
+
 import 'package:flutter/material.dart';
 import 'package:green_bush/services/keyboard_manager.dart';
 import 'package:green_bush/services/txt_to_image_interface.dart';
@@ -42,6 +43,7 @@ class CarouselWidget extends StatefulWidget {
 class _CarouselWidgetState extends State<CarouselWidget> {
   @override
   Widget build(BuildContext context) {
+    final elements = widget.imageRepository.loadedElements();
     return KeyboardListener(
       focusNode: widget.focusNode,
       autofocus: true,
@@ -50,21 +52,17 @@ class _CarouselWidgetState extends State<CarouselWidget> {
       child: Container(
         constraints: const BoxConstraints(minWidth: 1, minHeight: 1),
         child: CarouselSlider(
-          items: widget.imageRepository
-              .loadedElements()
+          items: elements
               .map((e) => th.Thumb(
                     runAnimation: widget.runAnimation,
                     controller: widget.controller,
                     controller2: widget.controller2,
                     imageRepository: widget.imageRepository,
-                    shot: widget.imageRepository.getShot(e),
-                    setAuto: widget.playbackState.setAuto,
+                    shot: e,
                     refresh: widget.refresh,
                     playbackState: widget.playbackState,
-                    label:
-                        widget.createLabel(widget.imageRepository.getShot(e)),
+                    label: widget.createLabel(e),
                     extension: widget.txtToImage.extension,
-                    blob: widget.imageRepository.getBlob(e),
                   ))
               .toList(),
           carouselController: widget.carouselController,

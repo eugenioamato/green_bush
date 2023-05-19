@@ -27,8 +27,7 @@ class ProgressSlider extends StatefulWidget {
 class _ProgressSliderState extends State<ProgressSlider> {
   @override
   Widget build(BuildContext context) {
-    final double loaded =
-        widget.imageRepository.loadedElements().length.toDouble();
+    final double loaded = widget.imageRepository.loadedElementsLen().toDouble();
     final errorRatio = widget.errors;
     final int loadingRatio = widget.total - (loaded.toInt() + errorRatio);
 

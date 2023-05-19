@@ -1,21 +1,18 @@
-import 'dart:typed_data';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gif_view/gif_view.dart';
 import 'package:green_bush/models/shot.dart';
 import 'package:green_bush/services/image_repository.dart';
 import 'package:green_bush/services/playback_state.dart';
-
-import '../services/file_service.dart';
+import 'package:green_bush/services/file_service.dart';
 
 class Thumb extends StatelessWidget {
   final Shot shot;
-  final Function setAuto;
+
   final PlaybackState playbackState;
   final ImageRepository imageRepository;
   final Function refresh;
   final String label;
-  final Uint8List blob;
   final String extension;
   final TextEditingController controller;
   final TextEditingController controller2;
@@ -24,7 +21,6 @@ class Thumb extends StatelessWidget {
   const Thumb({
     Key? key,
     required this.shot,
-    required this.setAuto,
     required this.refresh,
     required this.playbackState,
     required this.imageRepository,
@@ -32,17 +28,19 @@ class Thumb extends StatelessWidget {
     required this.controller2,
     required this.runAnimation,
     required this.label,
-    required this.blob,
     required this.extension,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    if (kDebugMode) {
+      print('building ${shot.diff} blob is ${shot.blob.length}');
+    }
     return GestureDetector(
       onTap: () {
-        setAuto(false);
+        playbackState.setAuto(false);
         FileService().saveFile(
-          blob,
+          shot.blob,
           label,
           controller.text,
           controller2.text,
@@ -50,13 +48,13 @@ class Thumb extends StatelessWidget {
         );
         runAnimation();
       },
-      child: (shot.url.isEmpty || blob.isEmpty)
+      child: (shot.url.isEmpty || shot.blob.isEmpty)
           ? GifView.asset('assets/images/loading.gif')
           : FittedBox(
               fit: BoxFit.contain,
               child: Container(
                 constraints: const BoxConstraints(minHeight: 1, minWidth: 1),
-                child: Image.memory(blob),
+                child: Image.memory(shot.blob),
               ),
             ),
     );

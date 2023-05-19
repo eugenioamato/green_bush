@@ -56,13 +56,6 @@ class _ActionsWidgetState extends State<ActionsWidget> {
               children: [
                 Expanded(
                     child: IconButton(
-                        onPressed: widget.playbackState.sort,
-                        icon: const Icon(
-                          Icons.sort,
-                          color: Colors.green,
-                        ))),
-                Expanded(
-                    child: IconButton(
                         onPressed: () {
                           widget.playbackState.setAuto(false);
                           Navigator.of(context)

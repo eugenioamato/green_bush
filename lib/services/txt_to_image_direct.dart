@@ -261,7 +261,6 @@ class TxtToImageDirect implements TxtToImageInterface {
     playbackState.setAuto(false);
     imageRepository.clearCache();
     playbackState.setPage(0, () {});
-    playbackState.setLoading(0.0);
     focusNode.requestFocus();
     systemPreferences.totalrenders = 0;
     setState(() {});

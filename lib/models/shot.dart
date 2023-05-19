@@ -1,8 +1,18 @@
 import 'dart:typed_data';
 
 class Shot implements Comparable<Shot> {
-  Shot(this.id, this.url, this.prompt, this.nprompt, this.cfg, this.steps,
-      this.seed, this.model, this.sampler, this.index);
+  Shot(
+    this.id,
+    this.url,
+    this.prompt,
+    this.nprompt,
+    this.cfg,
+    this.steps,
+    this.seed,
+    this.model,
+    this.sampler,
+    this.index,
+  );
   final int index;
   final String id;
   final String prompt;
@@ -16,12 +26,17 @@ class Shot implements Comparable<Shot> {
   double diff = double.infinity;
   Uint8List blob = Uint8List(0);
 
-  void updateBlob(blob) => this.blob = blob;
+  void updateBlob(blob) {
+    this.blob = blob;
+  }
+
   void updateDiff(diff) => this.diff = diff;
 
   @override
   int compareTo(Shot other) {
-    if (prompt == other.prompt) {
+    if (blob.isNotEmpty && other.blob.isNotEmpty) {
+      return diff.compareTo(other.diff);
+    } else if (prompt == other.prompt) {
       if (nprompt == other.nprompt) {
         if (seed == other.seed) {
           if (model == other.model) {
@@ -52,7 +67,7 @@ class Shot implements Comparable<Shot> {
     }
   }
 
-  copyWith({required int newIndex}) {
+  copyWith({int? newIndex}) {
     return Shot(
       id,
       url,
@@ -63,7 +78,9 @@ class Shot implements Comparable<Shot> {
       seed,
       model,
       sampler,
-      newIndex,
-    );
+      newIndex ?? index,
+    )
+      ..updateBlob(blob)
+      ..updateDiff(diff);
   }
 }

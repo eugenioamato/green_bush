@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:green_bush/services/playback_state.dart';
 import 'package:green_bush/services/system_preferences.dart';
 import 'package:green_bush/services/txt_to_image_interface.dart';
+import 'package:image_compare/image_compare.dart';
 import 'package:pool/pool.dart';
 
 import 'package:green_bush/models/shot.dart';
@@ -21,6 +22,7 @@ class TxtToImage implements TxtToImageInterface {
   final SystemPreferences systemPreferences;
   final GenerationPreferences generationPreferences;
   late final Pool pool;
+  late final Pool pool2;
 
   TxtToImage(
     this.playbackState,
@@ -31,6 +33,7 @@ class TxtToImage implements TxtToImageInterface {
   ) {
     pool = Pool(systemPreferences.maxThreads,
         timeout: const Duration(seconds: 60));
+    pool2 = Pool(1, timeout: const Duration(seconds: 60));
   }
 
   @override
@@ -204,26 +207,39 @@ class TxtToImage implements TxtToImageInterface {
         job, url, prompt, nprompt, cfg, steps, realSeed, model, sampler, index);
 
     imageRepository.addShot(index, updatedShot);
-    precacheBlob(url,updatedShot,setState);
+    await pool2.withResource(() => precacheBlob(url, updatedShot, setState));
     systemPreferences.activeThreads--;
     setState(() {});
   }
 
-  void precacheBlob(url, updatedShot, setState){
+  Future<void> precacheBlob(String url, Shot updatedShot, setState) async {
+    bool finished = false;
     if (url.isNotEmpty) {
       systemPreferences.activeDownloads++;
-      Image.network(url)
-          .image
-          .resolve(const ImageConfiguration())
-          .addListener(ImageStreamListener((image, synchronousCall) async {
-        final data =
-        await image.image.toByteData(format: ImageByteFormat.png);
+      final resolver =
+          Image.network(url).image.resolve(const ImageConfiguration());
+      resolver.addListener(ImageStreamListener((image, synchronousCall) async {
+        final data = await image.image.toByteData(format: ImageByteFormat.png);
         if (data != null) {
-          imageRepository.setBlob(
-              updatedShot.index, (data.buffer.asUint8List()));
-          playbackState.setLoading(
-              imageRepository.loadedElements().length.toDouble());
+          final blob = data.buffer.asUint8List();
+          final loaded = imageRepository.loadedElements();
+          imageRepository.setBlob(updatedShot.index, (blob));
           systemPreferences.activeDownloads--;
+
+          if (loaded.isEmpty) {
+            if (kDebugMode) {
+              print('setting target to ${updatedShot.index}');
+            }
+            updatedShot.updateDiff(0.0);
+          } else if (loaded.length == 1) {
+            var result = 2000.0;
+            updatedShot.updateDiff(result);
+          } else {
+            await compute(findSpot, Info(loaded, blob))
+                .then((value) => updatedShot.updateDiff(value));
+          }
+          finished = true;
+
           setState(() {});
         } else {
           if (kDebugMode) {
@@ -231,6 +247,7 @@ class TxtToImage implements TxtToImageInterface {
           }
           systemPreferences.errors++;
           systemPreferences.activeDownloads--;
+          finished = true;
         }
       }, onError: (e, stack) {
         if (kDebugMode) {
@@ -238,14 +255,11 @@ class TxtToImage implements TxtToImageInterface {
         }
         systemPreferences.errors++;
         systemPreferences.activeDownloads--;
+        finished = true;
       }));
-
-
-
-
-
-
-
+    }
+    while (!finished) {
+      await Future.delayed(const Duration(seconds: 1));
     }
   }
 
@@ -286,9 +300,8 @@ class TxtToImage implements TxtToImageInterface {
       apiGenerationEndpoint, apiFetchEndpoint, prompt, nprompt) async {
     playbackState.setAuto(false);
     imageRepository.clearCache();
-    systemPreferences.errors=0;
+    systemPreferences.errors = 0;
     playbackState.setPage(0, () {});
-    playbackState.setLoading(0.0);
     focusNode.requestFocus();
     systemPreferences.totalrenders = 0;
     setState(() {});
@@ -347,4 +360,35 @@ class TxtToImage implements TxtToImageInterface {
 
   @override
   String get extension => 'png';
+}
+
+Future<double> findSpot(Info f) async {
+  int interval = f.loaded.length ~/ 50;
+  if (interval < 1) interval = 1;
+  int pos = 0;
+  double min = double.infinity;
+  for (int i = 0; i < f.loaded.length; i += interval) {
+    var result = await compareImages(
+        src1: f.loaded[i].blob,
+        src2: f.blob,
+        algorithm: ChiSquareDistanceHistogram());
+    if (result < min) {
+      min = result;
+      pos = i;
+    }
+  }
+
+  if (pos == f.loaded.length - 1) {
+    return f.loaded[pos].diff * 2.0;
+  } else {
+    return f.loaded[pos].diff +
+        ((f.loaded[pos + 1].diff - f.loaded[pos].diff) * 0.5);
+  }
+}
+
+class Info {
+  final List<Shot> loaded;
+  final Uint8List blob;
+
+  Info(this.loaded, this.blob);
 }
