@@ -77,7 +77,7 @@ class TxtToImage implements TxtToImageInterface {
       apiFetchEndpoint,
       setState,
       repeatIndex) async {
-    if (repeatIndex > 3) {
+    if (repeatIndex > 7) {
       setState(() {
         systemPreferences.errors++;
       });
@@ -182,7 +182,6 @@ class TxtToImage implements TxtToImageInterface {
           if (kDebugMode) {
             print('failed job with:\n$resp2');
           }
-          systemPreferences.errors++;
           eraseOrRedo(
               earlyShot,
               setState,
@@ -276,7 +275,7 @@ class TxtToImage implements TxtToImageInterface {
       apiGenerationEndpoint, apiFetchEndpoint, prompt, nprompt) async {
     playbackState.setAuto(false);
     imageRepository.clearCache();
-
+    systemPreferences.errors=0;
     playbackState.setPage(0, () {});
     playbackState.setLoading(0.0);
     focusNode.requestFocus();
