@@ -204,38 +204,49 @@ class TxtToImage implements TxtToImageInterface {
         job, url, prompt, nprompt, cfg, steps, realSeed, model, sampler, index);
 
     imageRepository.addShot(index, updatedShot);
+    precacheBlob(url,updatedShot,setState);
+    systemPreferences.activeThreads--;
+    setState(() {});
+  }
+
+  void precacheBlob(url, updatedShot, setState){
     if (url.isNotEmpty) {
       systemPreferences.activeDownloads++;
       Image.network(url)
           .image
           .resolve(const ImageConfiguration())
           .addListener(ImageStreamListener((image, synchronousCall) async {
-            final data =
-                await image.image.toByteData(format: ImageByteFormat.png);
-            if (data != null) {
-              imageRepository.setBlob(
-                  updatedShot.index, (data.buffer.asUint8List()));
-              playbackState.setLoading(
-                  imageRepository.loadedElements().length.toDouble());
-              systemPreferences.activeDownloads--;
-              setState(() {});
-            } else {
-              if (kDebugMode) {
-                print('error resolving image $updatedShot ');
-              }
-              systemPreferences.errors++;
-              systemPreferences.activeDownloads--;
-            }
-          }, onError: (e, stack) {
-            if (kDebugMode) {
-              print('error resolving image $updatedShot \n $e $stack');
-            }
-            systemPreferences.errors++;
-            systemPreferences.activeDownloads--;
-          }));
+        final data =
+        await image.image.toByteData(format: ImageByteFormat.png);
+        if (data != null) {
+          imageRepository.setBlob(
+              updatedShot.index, (data.buffer.asUint8List()));
+          playbackState.setLoading(
+              imageRepository.loadedElements().length.toDouble());
+          systemPreferences.activeDownloads--;
+          setState(() {});
+        } else {
+          if (kDebugMode) {
+            print('error resolving image $updatedShot ');
+          }
+          systemPreferences.errors++;
+          systemPreferences.activeDownloads--;
+        }
+      }, onError: (e, stack) {
+        if (kDebugMode) {
+          print('error resolving image $updatedShot \n $e $stack');
+        }
+        systemPreferences.errors++;
+        systemPreferences.activeDownloads--;
+      }));
+
+
+
+
+
+
+
     }
-    systemPreferences.activeThreads--;
-    setState(() {});
   }
 
   void eraseOrRedo(

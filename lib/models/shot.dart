@@ -1,5 +1,7 @@
+import 'dart:typed_data';
+
 class Shot implements Comparable<Shot> {
-  const Shot(this.id, this.url, this.prompt, this.nprompt, this.cfg, this.steps,
+  Shot(this.id, this.url, this.prompt, this.nprompt, this.cfg, this.steps,
       this.seed, this.model, this.sampler, this.index);
   final int index;
   final String id;
@@ -11,6 +13,11 @@ class Shot implements Comparable<Shot> {
   final int seed;
   final int model;
   final int sampler;
+  double diff = double.infinity;
+  Uint8List blob = Uint8List(0);
+
+  void updateBlob(blob) => this.blob = blob;
+  void updateDiff(diff) => this.diff = diff;
 
   @override
   int compareTo(Shot other) {
@@ -46,8 +53,17 @@ class Shot implements Comparable<Shot> {
   }
 
   copyWith({required int newIndex}) {
-    return Shot(id,url,prompt,nprompt,cfg,steps,seed,model,sampler,
-    newIndex,
+    return Shot(
+      id,
+      url,
+      prompt,
+      nprompt,
+      cfg,
+      steps,
+      seed,
+      model,
+      sampler,
+      newIndex,
     );
   }
 }
