@@ -14,9 +14,9 @@ dependencies:
   carousel_slider: ^4.2.1
   pool: ^1.5.1
   gif_view: ^0.3.1
-  flutter_native_splash: ^2.2.19
   wakelock: ^0.6.2
   path_provider: ^2.0.15
+  image_compare: ^1.1.2
 
 dev_dependencies:
   flutter_test:
@@ -40,7 +40,3 @@ flutter:
     - family: PressStart2P
       fonts:
         - asset: assets/fonts/PressStart2P-Regular.ttf
-
-
-flutter_native_splash:
-  color: "#000000"

@@ -44,4 +44,10 @@ class Shot implements Comparable<Shot> {
       return prompt.compareTo(other.prompt);
     }
   }
+
+  copyWith({required int newIndex}) {
+    return Shot(id,url,prompt,nprompt,cfg,steps,seed,model,sampler,
+    newIndex,
+    );
+  }
 }

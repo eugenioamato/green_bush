@@ -1,5 +1,4 @@
 import 'package:carousel_slider/carousel_controller.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:green_bush/services/image_repository.dart';
 import 'package:green_bush/services/playback_state.dart';
