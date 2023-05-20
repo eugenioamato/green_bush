@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:core';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -25,7 +26,7 @@ class FileService {
         .replaceAll(',', '_')
         .replaceAll('/', '')
         .replaceAll(':', '');
-    id = id.substring(0, 254 - (extension.length));
+    id = id.substring(0, min(254, id.length) - (extension.length));
 
     try {
       final saveDir =

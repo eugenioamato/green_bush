@@ -40,6 +40,16 @@ class _ProgressSliderState extends State<ProgressSlider> {
         secondary = loaded;
       }
     }
+    double val=(widget.playbackState.getPage() >= widget.total
+        ? widget.total.toDouble()
+        : widget.playbackState.getPage().toDouble());
+
+    if (  val<0){
+      val=0.0;
+    }
+    if (val>loaded){
+      val=loaded;
+    }
     return Padding(
       padding: const EdgeInsets.all(12.0),
       child: Flex(
@@ -59,9 +69,7 @@ class _ProgressSliderState extends State<ProgressSlider> {
                 secondaryTrackValue: secondary,
                 inactiveColor: Colors.yellow.withOpacity(0.2),
                 activeColor: Colors.lightGreen,
-                value: (widget.playbackState.getPage() > widget.total
-                    ? widget.total.toDouble()
-                    : widget.playbackState.getPage().toDouble()),
+                value: val,
                 onChangeStart: (newPage) {
                   widget.playbackState.setAuto(false);
                   widget.playbackState.setDisableCaching(true);
