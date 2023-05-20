@@ -30,7 +30,16 @@ class _ProgressSliderState extends State<ProgressSlider> {
     final double loaded = widget.imageRepository.loadedElementsLen().toDouble();
     final errorRatio = widget.errors;
     final int loadingRatio = widget.total - (loaded.toInt() + errorRatio);
-
+    var secondary = widget.imageRepository.getSortProgress();
+    if (secondary == null) {
+      secondary = 0.0;
+    } else {
+      if (secondary < 0) {
+        secondary = 0.0;
+      } else if (secondary > loaded) {
+        secondary = loaded;
+      }
+    }
     return Padding(
       padding: const EdgeInsets.all(12.0),
       child: Flex(
@@ -47,6 +56,7 @@ class _ProgressSliderState extends State<ProgressSlider> {
               child: Slider.adaptive(
                 min: 0,
                 max: loaded,
+                secondaryTrackValue: secondary,
                 inactiveColor: Colors.yellow.withOpacity(0.2),
                 activeColor: Colors.lightGreen,
                 value: (widget.playbackState.getPage() > widget.total

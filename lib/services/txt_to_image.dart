@@ -8,7 +8,6 @@ import 'package:flutter/foundation.dart';
 import 'package:green_bush/services/playback_state.dart';
 import 'package:green_bush/services/system_preferences.dart';
 import 'package:green_bush/services/txt_to_image_interface.dart';
-import 'package:image_compare/image_compare.dart';
 import 'package:pool/pool.dart';
 
 import 'package:green_bush/models/shot.dart';
@@ -223,6 +222,10 @@ class TxtToImage implements TxtToImageInterface {
           final blob = data.buffer.asUint8List();
           imageRepository.setBlob(updatedShot.index, (blob));
           systemPreferences.activeDownloads--;
+          if (systemPreferences.activeDownloads == 0 &&
+              systemPreferences.activeThreads == 0) {
+            imageRepository.sort();
+          }
           setState(() {});
         } else {
           if (kDebugMode) {
@@ -280,6 +283,7 @@ class TxtToImage implements TxtToImageInterface {
     imageRepository.clearCache();
     systemPreferences.errors = 0;
     systemPreferences.activeSorters = 0;
+    imageRepository.setSortProgress(0.0);
     playbackState.setPage(0, () {});
     focusNode.requestFocus();
     systemPreferences.totalrenders = 0;

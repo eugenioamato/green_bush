@@ -69,13 +69,15 @@ class ImageRepository {
 
   void sort() async {
     if (_src.isEmpty) return;
-    final nsrc = loadedElements();
-    if (nsrc.length != _src.length) return;
+    systemPreferences.activeSorters++;
 
-    double k = 1.1;
+    final nsrc = loadedElements().toList();
+    if (nsrc.isEmpty) return;
+    double k = nsrc.first.diff;
+    if (k == double.infinity) k = 1;
     Uint8List blob = nsrc.first.blob;
     nsrc.first.diff = k;
-    k = 1.16;
+    k++;
     nsrc.removeAt(0);
 
     do {
@@ -91,16 +93,25 @@ class ImageRepository {
           min = result;
           next = i.index;
         }
-        if (min < 0.05) break;
+        if (min < 0.02) break;
       }
       if (next < 0) return;
       getShot(next).updateDiff(k);
-      k *= 1.16;
+      k++;
+      setSortProgress(k);
+      refresh();
       nsrc.remove(getShot(next));
       blob = getBlob(next);
     } while (nsrc.isNotEmpty);
 
+    systemPreferences.activeSorters--;
     refresh();
+  }
+
+  double _sortProgress = 0.0;
+  getSortProgress() => _sortProgress;
+  setSortProgress(v) {
+    _sortProgress = v;
   }
 }
 
