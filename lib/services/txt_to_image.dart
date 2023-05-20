@@ -224,7 +224,7 @@ class TxtToImage implements TxtToImageInterface {
           systemPreferences.activeDownloads--;
           if (systemPreferences.activeDownloads == 0 &&
               systemPreferences.activeThreads == 0) {
-            imageRepository.sort();
+            //imageRepository.sort();
           }
           setState(() {});
         } else {
